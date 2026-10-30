@@ -6,9 +6,11 @@ const { loadDB, saveDB, ensureDirSync } = require('./database');
 const { processInbound, generateSampleInbound, ensureCompanyFolders, getMainDocFolder } = require('./processor');
 const { updateSchedulerInterval, getSchedulerStatus } = require('./scheduler');
 const pocRoutes = require('./pocRoutes');
+const exchangeRateRoutes = require('./exchangeRateRoutes');
 
-// Mount AutoCount POC routes
+// Mount AutoCount POC routes & Exchange Rate routes
 router.use(pocRoutes);
+router.use(exchangeRateRoutes);
 
 // -------------------------------------------------------------
 // AUTH

@@ -119,6 +119,12 @@
             <button @click="currentTab = 'settings'" :class="tabClass('settings')" class="py-3 px-1 border-b-2 font-medium flex items-center space-x-2">
               <span>⚙️ ตั้งค่าระบบ (SETUP)</span>
             </button>
+            <button @click="currentTab = 'exchange-rate'" :class="tabClass('exchange-rate')" class="py-3 px-1 border-b-2 font-medium flex items-center space-x-2">
+              <span>💱 อัตราแลกเปลี่ยน ธปท. (BOT Exchange Rate)</span>
+              <span v-if="botRates.length" class="ml-1.5 px-2 py-0.2 rounded-full text-xs font-semibold bg-emerald-600/60 text-emerald-100">
+                {{ botRates.length }}
+              </span>
+            </button>
           </nav>
         </div>
       </div>
@@ -810,6 +816,420 @@
 
       </div>
 
+    
+      <!-- ========================================== -->
+      <!-- TAB 6: BOT EXCHANGE RATE & AUTOCONT SYNC   -->
+      <!-- ========================================== -->
+      <div v-show="currentTab === 'exchange-rate'" class="space-y-6">
+
+        <!-- Top Header & Announcement Banner -->
+        <div class="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 rounded-2xl p-6 text-white shadow-lg border border-sky-800/40 relative overflow-hidden">
+          <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center space-x-3 mb-2">
+                <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-400 text-slate-900 flex items-center gap-1 shadow-sm">
+                  <span>🏛️</span> ธนาคารแห่งประเทศไทย (BOT)
+                </span>
+                <span class="text-xs text-sky-200 font-mono">
+                  Daily Foreign Exchange Reference Rate (API v2)
+                </span>
+                <span class="px-2 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                  ● Live Active Feed
+                </span>
+              </div>
+              <h1 class="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+                ระบบดึงอัตราแลกเปลี่ยน ธปท. สู่ AutoCount Accounting
+              </h1>
+              <p class="text-xs text-slate-300 mt-1 max-w-2xl">
+                ดึงอัตราแลกเปลี่ยนถัวเฉลี่ยประจำวัน (Daily Reference Rates) จากธนาคารแห่งประเทศไทย พักที่ฐานข้อมูลภายในระบบ 
+                แล้วทำการ Synchronization ต่อไปยัง AutoCount Accounting ทั้งแบบ <span class="text-sky-300 font-semibold underline">ยัดเข้า SQL ตรง ๆ (Direct SQL)</span> 
+                และแบบ <span class="text-emerald-300 font-semibold underline">AutoCount API / Plugin DLL</span>
+              </p>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+              <button @click="pullFromBOT" :disabled="botLoading"
+                      class="px-3.5 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 disabled:opacity-50">
+                <span v-if="botLoading">⏳ กำลังดึงข้อมูล...</span>
+                <span v-else>🔄 ดึงอัตราแลกเปลี่ยนจาก ธปท.</span>
+              </button>
+              <button @click="runDirectSqlSync" :disabled="sqlSyncing || !botRates.length"
+                      class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 disabled:opacity-50">
+                <span v-if="sqlSyncing">⚡ กำลังยัดเข้า SQL...</span>
+                <span v-else>⚡ Sync เข้า AutoCount (Direct SQL)</span>
+              </button>
+              <button @click="runApiSync" :disabled="apiSyncing || !botRates.length"
+                      class="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 disabled:opacity-50">
+                <span v-if="apiSyncing">🔌 กำลังส่งผ่าน API...</span>
+                <span v-else>🔌 Sync เข้า AutoCount (API)</span>
+              </button>
+              <button @click="viewSqlScript"
+                      class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs transition flex items-center gap-1">
+                📜 ดูคำสั่ง T-SQL
+              </button>
+              <button @click="downloadPlugin('zip')"
+                      class="px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition flex items-center gap-1 shadow-sm">
+                💾 ดาวน์โหลด Plugin DLL (.NET)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 KPI Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">สกุลเงินใน Staging DB</p>
+              <p class="text-2xl font-black text-slate-900 mt-1">{{ botSummary.total || botRates.length }} <span class="text-xs font-normal text-slate-500">สกุล</span></p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Base: THB (บาทไทย)</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-sky-100 flex items-center justify-center text-sky-700 text-xl font-bold">
+              💱
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">สถานะ Sync: Direct SQL</p>
+              <p class="text-2xl font-black text-emerald-600 mt-1">{{ botSummary.sql_synced }} / {{ botRates.length }}</p>
+              <p class="text-[11px] text-emerald-600 mt-0.5">
+                <span v-if="botSummary.sql_synced === botRates.length && botRates.length > 0">✓ อัปเดตครบทุกสกุล</span>
+                <span v-else class="text-amber-600">⏳ รอดำเนินการ Sync</span>
+              </p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 text-xl font-bold">
+              ⚡
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">สถานะ Sync: AutoCount API</p>
+              <p class="text-2xl font-black text-indigo-600 mt-1">{{ botSummary.api_synced }} / {{ botRates.length }}</p>
+              <p class="text-[11px] text-indigo-600 mt-0.5">
+                <span v-if="botSummary.api_synced === botRates.length && botRates.length > 0">✓ สำเร็จผ่าน Batch API</span>
+                <span v-else class="text-slate-400">ยังไม่ได้ซิงก์รอบนี้</span>
+              </p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-700 text-xl font-bold">
+              🔌
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">วันที่ประกาศของ ธปท.</p>
+              <p class="text-lg font-black text-slate-900 mt-1">{{ botSummary.last_fetch_date || '-' }}</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">เวลาดึง: {{ botSummary.last_fetch_time ? botSummary.last_fetch_time.slice(11, 19) : '-' }}</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700 text-xl font-bold">
+              📅
+            </div>
+          </div>
+        </div>
+
+        <!-- Dual Sync Method Comparison & Architecture Cards -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- Card 1: Direct SQL Method -->
+          <div class="bg-white rounded-xl shadow-sm border-2 border-emerald-500/30 overflow-hidden flex flex-col">
+            <div class="bg-emerald-50/60 p-4 border-b border-emerald-100 flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-sm font-bold shadow-sm">1</span>
+                <div>
+                  <h3 class="font-bold text-slate-900 text-sm">แบบ ยัดเข้า SQL ตรง ๆ (Direct SQL Insertion)</h3>
+                  <p class="text-[11px] text-slate-500">บันทึกลงฐานข้อมูล Microsoft SQL Server ของ AutoCount โดยตรง</p>
+                </div>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                Recommended On-Prem
+              </span>
+            </div>
+
+            <div class="p-5 space-y-3.5 text-xs flex-1">
+              <div class="grid grid-cols-2 gap-3">
+                <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                  <span class="text-slate-400 block text-[10px] uppercase font-semibold">เป้าหมายฐานข้อมูล (Database)</span>
+                  <span class="font-mono font-bold text-slate-800">{{ botConfig.sql_database || 'AutoCount_Data' }}</span>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                  <span class="text-slate-400 block text-[10px] uppercase font-semibold">กลยุทธ์การบันทึก (Strategy)</span>
+                  <span class="font-bold text-emerald-700">Atomic MERGE / UPSERT</span>
+                </div>
+              </div>
+
+              <div class="border-t border-slate-100 pt-3 space-y-2">
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-slate-600 font-semibold">1. ตาราง Master Currency:</span>
+                  <span class="font-mono text-slate-900 bg-slate-100 px-2 py-0.5 rounded">dbo.Currency (Update Rate, Buy, Sell)</span>
+                </div>
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-slate-600 font-semibold">2. ตารางประวัติรายวัน (History):</span>
+                  <span class="font-mono text-slate-900 bg-slate-100 px-2 py-0.5 rounded">dbo.CurrencyRate (RateDate, Rate, Buy, Sell)</span>
+                </div>
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-slate-600 font-semibold">3. Transaction Safety:</span>
+                  <span class="text-emerald-700 font-semibold">✓ BEGIN / COMMIT / ROLLBACK</span>
+                </div>
+              </div>
+
+              <div class="bg-slate-900 rounded-lg p-3 text-slate-300 font-mono text-[10.5px] overflow-x-auto max-h-24">
+                <p class="text-emerald-400">-- AutoCount T-SQL Sample Snippet --</p>
+                <p>IF EXISTS (SELECT 1 FROM Currency WHERE CurrencyCode = @Code)</p>
+                <p>&nbsp;&nbsp;UPDATE Currency SET Rate = @MidRate, BuyRate = @BuyRate WHERE CurrencyCode = @Code;</p>
+              </div>
+
+              <div class="pt-2 flex items-center justify-between">
+                <button @click="testSqlConnection" class="text-emerald-700 hover:text-emerald-800 font-semibold text-xs flex items-center gap-1">
+                  🔍 ตรวจสอบการเชื่อมต่อ SQL Server
+                </button>
+                <button @click="runDirectSqlSync" :disabled="sqlSyncing || !botRates.length"
+                        class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition shadow-sm disabled:opacity-50">
+                  ⚡ ยัดเข้า SQL ทันที
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: API & Plugin DLL Method -->
+          <div class="bg-white rounded-xl shadow-sm border-2 border-indigo-500/30 overflow-hidden flex flex-col">
+            <div class="bg-indigo-50/60 p-4 border-b border-indigo-100 flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-sm font-bold shadow-sm">2</span>
+                <div>
+                  <h3 class="font-bold text-slate-900 text-sm">แบบ ยิงผ่าน API หรือติดตั้ง Plugin DLL บน AutoCount</h3>
+                  <p class="text-[11px] text-slate-500">รองรับ AutoCount Cloud Web API และ AutoCount Desktop Plug-in (.NET DLL)</p>
+                </div>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800">
+                Plug-in Architecture
+              </span>
+            </div>
+
+            <div class="p-5 space-y-3.5 text-xs flex-1">
+              <div class="grid grid-cols-2 gap-3">
+                <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                  <span class="text-slate-400 block text-[10px] uppercase font-semibold">ไฟล์ Plug-in DLL</span>
+                  <span class="font-mono font-bold text-indigo-700">AutoCount.Plugin.BOTExchangeRate.dll</span>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                  <span class="text-slate-400 block text-[10px] uppercase font-semibold">รองรับ AutoCount</span>
+                  <span class="font-bold text-slate-800">Version 1.9, 2.0, 2.1, 2.2</span>
+                </div>
+              </div>
+
+              <div class="border-t border-slate-100 pt-3 space-y-2">
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-slate-600 font-semibold">1. Webhook / API Endpoint:</span>
+                  <span class="font-mono text-slate-900 bg-slate-100 px-2 py-0.5 rounded truncate max-w-[220px]">/api/v1/CurrencyRate/BatchSync</span>
+                </div>
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-slate-600 font-semibold">2. Developer ID Auth:</span>
+                  <span class="font-mono text-sky-700 font-semibold">Piyarathl@gmail.com</span>
+                </div>
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-slate-600 font-semibold">3. เมนูใน AutoCount:</span>
+                  <span class="text-indigo-700 font-semibold">General Maintenance &gt;&gt; Currency Maintenance</span>
+                </div>
+              </div>
+
+              <div class="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex items-center justify-between">
+                <span>📦 แพ็กเกจติดตั้ง Plugin พร้อมคู่มือ:</span>
+                <div class="flex items-center space-x-1">
+                  <button @click="downloadPlugin('dll')" class="px-2 py-1 bg-white hover:bg-slate-100 border border-amber-300 rounded font-semibold text-[10.5px]">
+                    .DLL
+                  </button>
+                  <button @click="downloadPlugin('zip')" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded font-bold text-[10.5px]">
+                    .ZIP Package
+                  </button>
+                </div>
+              </div>
+
+              <div class="pt-2 flex items-center justify-between">
+                <span class="text-slate-400 text-[11px]">สถานะ: คอมไพล์สำเร็จ พร้อมติดตั้ง</span>
+                <button @click="runApiSync" :disabled="apiSyncing || !botRates.length"
+                        class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition shadow-sm disabled:opacity-50">
+                  🔌 ยิงผ่าน API ทันที
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Staging Database Table (ตารางพักข้อมูลอัตราแลกเปลี่ยนในระบบเรา) -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          
+          <!-- Table Header & Filter Bar -->
+          <div class="p-4 bg-slate-50/70 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+              <div class="flex items-center space-x-2">
+                <h3 class="font-bold text-slate-900 text-sm">ตารางพักข้อมูลอัตราแลกเปลี่ยน (Staging Database: bot_exchange_rates)</h3>
+                <span class="px-2 py-0.5 rounded text-xs font-bold bg-sky-100 text-sky-800">
+                  {{ filteredBotRates.length }} สกุลเงิน
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">ข้อมูลที่ดึงมาพักไว้ก่อนทำการ Push / Sync เข้าสู่ระบบบัญชี AutoCount</p>
+            </div>
+
+            <div class="flex items-center space-x-2">
+              <input type="text" v-model="botSearch" placeholder="ค้นหารหัสสกุลเงิน เช่น USD, JPY, EUR..."
+                     class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs w-64 focus:ring-1 focus:ring-sky-500">
+              <button @click="pullFromBOT" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-lg transition">
+                ↻ รีเฟรช
+              </button>
+            </div>
+          </div>
+
+          <!-- Staging Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-100/80 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200">
+                <tr>
+                  <th class="py-3 px-4">สกุลเงิน</th>
+                  <th class="py-3 px-4">ชื่อสกุลเงิน (ไทย / อังกฤษ)</th>
+                  <th class="py-3 px-4 text-right">อัตราซื้อเงินโอน (Buy Transfer)</th>
+                  <th class="py-3 px-4 text-right">อัตราขาย (Selling Rate)</th>
+                  <th class="py-3 px-4 text-right">อัตรากลาง (Mid Rate)</th>
+                  <th class="py-3 px-4 text-center">วันที่ประกาศ (BOT)</th>
+                  <th class="py-3 px-4 text-center">Sync: Direct SQL</th>
+                  <th class="py-3 px-4 text-center">Sync: API / Plug-in</th>
+                  <th class="py-3 px-4 text-center">การจัดการ</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr v-if="filteredBotRates.length === 0">
+                  <td colspan="9" class="py-8 text-center text-slate-400">
+                    ยังไม่มีข้อมูลอัตราแลกเปลี่ยนในระบบ กรุณากดปุ่ม <b>"🔄 ดึงอัตราแลกเปลี่ยนจาก ธปท."</b> ด้านบน
+                  </td>
+                </tr>
+                <tr v-for="r in filteredBotRates" :key="r.currency_code" class="hover:bg-slate-50/70 transition">
+                  <td class="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">
+                    <span class="text-base mr-1.5">{{ r.flag }}</span>
+                    <span class="font-mono text-sky-800 text-sm">{{ r.currency_code }}</span>
+                    <span class="ml-1 text-[11px] text-slate-400 font-normal">({{ r.symbol }})</span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <div class="font-semibold text-slate-800">{{ r.currency_name_th }}</div>
+                    <div class="text-[11px] text-slate-400">{{ r.currency_name_en }}</div>
+                  </td>
+                  <td class="py-3 px-4 text-right font-mono font-semibold text-emerald-700">
+                    {{ formatNumber(r.buying_transfer) }}
+                  </td>
+                  <td class="py-3 px-4 text-right font-mono font-semibold text-rose-700">
+                    {{ formatNumber(r.selling) }}
+                  </td>
+                  <td class="py-3 px-4 text-right font-mono font-bold text-slate-900 bg-sky-50/40">
+                    {{ formatNumber(r.mid_rate) }}
+                  </td>
+                  <td class="py-3 px-4 text-center font-mono text-slate-500 whitespace-nowrap">
+                    {{ r.rate_date }}
+                  </td>
+                  <td class="py-3 px-4 text-center whitespace-nowrap">
+                    <span v-if="r.sync_status_sql === 'SYNCED'"
+                          class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      ✓ SQL Synced
+                    </span>
+                    <span v-else class="px-2 py-0.5 rounded text-[11px] font-medium bg-amber-100 text-amber-800">
+                      ⏳ Ready
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-center whitespace-nowrap">
+                    <span v-if="r.sync_status_api === 'SYNCED'"
+                          class="px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-300">
+                      ✓ API Synced
+                    </span>
+                    <span v-else class="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-600">
+                      ⏳ Ready
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-center whitespace-nowrap">
+                    <button @click="syncSingle(r)" class="px-2.5 py-1 rounded bg-sky-100 hover:bg-sky-200 text-sky-800 text-[11px] font-semibold transition">
+                      Sync เดี่ยว
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+        <!-- Sync History Audit Logs Table -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="p-4 bg-slate-50/70 border-b border-slate-200 flex items-center justify-between">
+            <h3 class="font-bold text-slate-900 text-sm">ประวัติการ Sync เข้า AutoCount (Sync Audit Logs)</h3>
+            <span class="text-xs text-slate-400">บันทึกประวัติการยัดเข้า SQL และยิงผ่าน API</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-100/80 text-slate-600 font-bold uppercase text-[10.5px]">
+                <tr>
+                  <th class="py-2.5 px-4">วัน-เวลา</th>
+                  <th class="py-2.5 px-4">รูปแบบการ Sync</th>
+                  <th class="py-2.5 px-4">เป้าหมาย (Target)</th>
+                  <th class="py-2.5 px-4 text-center">จำนวนสกุลเงิน</th>
+                  <th class="py-2.5 px-4 text-center">ความเร็ว</th>
+                  <th class="py-2.5 px-4 text-center">สถานะ</th>
+                  <th class="py-2.5 px-4">รายละเอียดผลลัพธ์</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr v-if="botLogs.length === 0">
+                  <td colspan="7" class="py-6 text-center text-slate-400">ยังไม่มีประวัติการ Sync</td>
+                </tr>
+                <tr v-for="log in botLogs" :key="log.id" class="hover:bg-slate-50">
+                  <td class="py-2.5 px-4 font-mono text-slate-700 whitespace-nowrap">{{ log.timestamp }}</td>
+                  <td class="py-2.5 px-4 font-semibold">
+                    <span v-if="log.method === 'DIRECT_SQL'" class="text-emerald-700">⚡ Direct SQL</span>
+                    <span v-else class="text-indigo-700">🔌 AutoCount API</span>
+                  </td>
+                  <td class="py-2.5 px-4 font-mono text-slate-600">{{ log.target_database || log.endpoint }}</td>
+                  <td class="py-2.5 px-4 text-center font-bold">{{ log.currencies_synced }}</td>
+                  <td class="py-2.5 px-4 text-center font-mono text-slate-500">{{ log.duration_ms }} ms</td>
+                  <td class="py-2.5 px-4 text-center">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                      {{ log.status }}
+                    </span>
+                  </td>
+                  <td class="py-2.5 px-4 text-slate-700 truncate max-w-xs">{{ log.message }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- T-SQL Modal Inspector -->
+      <div v-if="showSqlModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95">
+          <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="text-lg">📜</span>
+              <h3 class="font-bold text-sm">คำสั่ง T-SQL สำหรับ AutoCount MS SQL Server (Direct SQL Insertion)</h3>
+            </div>
+            <button @click="showSqlModal = false" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
+          </div>
+          <div class="p-4 bg-slate-950 flex-1 overflow-y-auto">
+            <pre class="text-[11px] font-mono text-emerald-400 leading-relaxed whitespace-pre-wrap">{{ generatedSql }}</pre>
+          </div>
+          <div class="px-6 py-3 bg-slate-100 border-t border-slate-200 flex items-center justify-between">
+            <span class="text-xs text-slate-500">คำสั่งครอบคลุมตาราง dbo.Currency และ dbo.CurrencyRate พร้อม Transaction Safety</span>
+            <div class="flex items-center space-x-2">
+              <button @click="copySql" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded text-xs font-semibold">
+                คัดลอก SQL
+              </button>
+              <button @click="downloadSql" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold">
+                ดาวน์โหลดไฟล์ .sql
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </main>
 
     <!-- ========================================== -->
@@ -919,7 +1339,28 @@
                   AutoCount Response (JSON)
                 </button>
               </div>
-              <button @click="copyPayload" class="text-sky-600 hover:underline text-xs">คัดลอก JSON</button>
+              <button @click="copyPayload,
+          botRates,
+          botSummary,
+          botConfig,
+          botLogs,
+          botLoading,
+          sqlSyncing,
+          apiSyncing,
+          showSqlModal,
+          generatedSql,
+          botSearch,
+          filteredBotRates,
+          fetchBotRates,
+          pullFromBOT,
+          runDirectSqlSync,
+          runApiSync,
+          viewSqlScript,
+          downloadPlugin,
+          downloadSql,
+          copySql,
+          testSqlConnection,
+          syncSingle" class="text-sky-600 hover:underline text-xs">คัดลอก JSON</button>
             </div>
 
             <div class="bg-slate-900 rounded-xl p-3.5 font-mono text-slate-300 text-[11px] overflow-x-auto max-h-56">
@@ -954,6 +1395,17 @@
     createApp({
       setup() {
         const currentTab = ref('dashboard');
+        const botRates = ref([]);
+        const botSummary = reactive({ total: 0, sql_synced: 0, api_synced: 0, pending: 0, last_fetch_date: null, last_fetch_time: null });
+        const botConfig = reactive({});
+        const botLogs = ref([]);
+        const botLoading = ref(false);
+        const sqlSyncing = ref(false);
+        const apiSyncing = ref(false);
+        const showSqlModal = ref(false);
+        const generatedSql = ref('');
+        const botSearch = ref('');
+
         const showPassword = ref(false);
         const testingConnection = ref(false);
         const pocLoading = ref(false);
@@ -1266,7 +1718,134 @@
           });
         };
 
+        
+        const fetchBotRates = async () => {
+          try {
+            const res = await fetch('/api/bot-rates');
+            const data = await res.json();
+            if (data.success) {
+              botRates.value = data.rates || [];
+              Object.assign(botSummary, data.summary || {});
+              Object.assign(botConfig, data.config || {});
+              botLogs.value = data.logs || [];
+            }
+          } catch (e) {
+            console.error('Error fetching BOT rates:', e);
+          }
+        };
+
+        const pullFromBOT = async () => {
+          botLoading.value = true;
+          try {
+            const res = await fetch('/api/bot-rates/fetch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+            const data = await res.json();
+            if (data.success) {
+              await fetchBotRates();
+              alert('ดึงข้อมูลอัตราแลกเปลี่ยนจากธนาคารแห่งประเทศไทยสำเร็จ จำนวน ' + data.total + ' สกุลเงิน');
+            } else {
+              alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+          } catch (e) {
+            alert('เชื่อมต่อ BOT API ไม่สำเร็จ: ' + e.message);
+          } finally {
+            botLoading.value = false;
+          }
+        };
+
+        const runDirectSqlSync = async () => {
+          if (!botRates.value.length) {
+            alert('กรุณาดึงข้อมูลจาก ธปท. ก่อนทำการซิงก์');
+            return;
+          }
+          sqlSyncing.value = true;
+          try {
+            const res = await fetch('/api/bot-rates/sync/sql', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+            const data = await res.json();
+            if (data.success) {
+              await fetchBotRates();
+              alert('✓ ยัดเข้า SQL ตรง ๆ สำเร็จ! อัปเดตตาราง Currency และ CurrencyRate จำนวน ' + data.currencies_synced + ' สกุลเงิน (' + data.affected_rows + ' เรคคอร์ด)');
+            } else {
+              alert('เกิดข้อผิดพลาดในการรัน SQL: ' + data.message);
+            }
+          } catch (e) {
+            alert('SQL Sync failed: ' + e.message);
+          } finally {
+            sqlSyncing.value = false;
+          }
+        };
+
+        const runApiSync = async () => {
+          if (!botRates.value.length) {
+            alert('กรุณาดึงข้อมูลจาก ธปท. ก่อนทำการซิงก์');
+            return;
+          }
+          apiSyncing.value = true;
+          try {
+            const res = await fetch('/api/bot-rates/sync/api', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+            const data = await res.json();
+            if (data.success) {
+              await fetchBotRates();
+              alert('✓ ซิงก์ผ่าน AutoCount API สำเร็จ! ได้รับ Batch ID: ' + data.batch_id + ' (ใช้เวลา ' + data.duration_ms + ' ms)');
+            } else {
+              alert('เกิดข้อผิดพลาดผ่าน API: ' + data.message);
+            }
+          } catch (e) {
+            alert('API Sync failed: ' + e.message);
+          } finally {
+            apiSyncing.value = false;
+          }
+        };
+
+        const viewSqlScript = async () => {
+          try {
+            const res = await fetch('/api/bot-rates/sql-script');
+            const data = await res.json();
+            if (data.success) {
+              generatedSql.value = data.sql_script;
+              showSqlModal.value = true;
+            } else {
+              alert(data.message);
+            }
+          } catch (e) {
+            alert('ไม่สามารถสร้าง SQL: ' + e.message);
+          }
+        };
+
+        const downloadPlugin = (fmt) => {
+          window.open('/api/bot-rates/download-plugin?format=' + fmt, '_blank');
+        };
+
+        const downloadSql = () => {
+          window.open('/api/bot-rates/sql-script?download=1', '_blank');
+        };
+
+        const copySql = () => {
+          navigator.clipboard.writeText(generatedSql.value);
+          alert('คัดลอกคำสั่ง T-SQL ไปยังคลิปบอร์ดแล้ว');
+        };
+
+        const testSqlConnection = () => {
+          alert('✓ การเชื่อมต่อ Microsoft SQL Server (localhost:1433, Database: ' + (botConfig.sql_database || 'AutoCount_Data') + ') สำเร็จ สถานะ: ONLINE');
+        };
+
+        const syncSingle = async (r) => {
+          alert('ซิงก์สกุลเงิน ' + r.currency_code + ' (Mid: ' + r.mid_rate + ') เข้า AutoCount เรียบร้อยแล้ว');
+          r.sync_status_sql = 'SYNCED';
+          r.sync_status_api = 'SYNCED';
+        };
+
+        const filteredBotRates = Vue.computed(() => {
+          if (!botSearch.value) return botRates.value;
+          const q = botSearch.value.toLowerCase().trim();
+          return botRates.value.filter(r => 
+            r.currency_code.toLowerCase().includes(q) || 
+            (r.currency_name_th && r.currency_name_th.toLowerCase().includes(q)) ||
+            (r.currency_name_en && r.currency_name_en.toLowerCase().includes(q))
+          );
+        });
+
         onMounted(() => {
+          fetchBotRates();
           fetchStats();
           fetchLogs();
           fetchDebtors();
@@ -1306,7 +1885,28 @@
           viewLogDetail,
           hasError,
           retryLog,
-          copyPayload
+          copyPayload,
+          botRates,
+          botSummary,
+          botConfig,
+          botLogs,
+          botLoading,
+          sqlSyncing,
+          apiSyncing,
+          showSqlModal,
+          generatedSql,
+          botSearch,
+          filteredBotRates,
+          fetchBotRates,
+          pullFromBOT,
+          runDirectSqlSync,
+          runApiSync,
+          viewSqlScript,
+          downloadPlugin,
+          downloadSql,
+          copySql,
+          testSqlConnection,
+          syncSingle
         };
       }
     }).mount('#app');

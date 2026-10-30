@@ -1,0 +1,43 @@
+================================================================================
+  คู่มือการติดตั้งและใช้งาน AutoCount Plug-in: Bank of Thailand Exchange Rate Sync
+  (Bank of Thailand Exchange Rate Auto-Sync Plug-in for AutoCount Accounting)
+================================================================================
+
+1. ภาพรวมของ Plug-in (Overview):
+   - ชื่อไฟล์: AutoCount.Plugin.BOTExchangeRate.dll
+   - รองรับเวอร์ชัน: AutoCount Accounting 1.9, 2.0, 2.1, 2.2 (Windows 32/64-bit)
+   - หน้าที่: ดึงอัตราแลกเปลี่ยนเงินตราต่างประเทศประจำวันจากธนาคารแห่งประเทศไทย (ธปท.) 
+     แล้วบันทึกเข้าตาราง Currency และ CurrencyRate ในฐานข้อมูล AutoCount อัตโนมัติทุกเช้า 09:30 น.
+
+2. ขั้นตอนการติดตั้งบนโปรแกรม AutoCount Accounting Desktop:
+   ขั้นตอนที่ 1: คัดลอกไฟล์ "AutoCount.Plugin.BOTExchangeRate.dll" ไปไว้ที่โฟลเดอร์ Plugin ของ AutoCount
+               โดยทั่วไปอยู่ที่: C:\Program Files (x86)\AutoCount\Accounting 2.0\Plugin\
+               หรือโฟลเดอร์ติดตั้งของ AutoCount Accounting
+
+   ขั้นตอนที่ 2: เปิดโปรแกรม AutoCount Accounting ด้วยสิทธิ์ผู้ดูแลระบบ (Admin)
+               เข้าเมนู: Tools >> Plug-In Manager
+
+   ขั้นตอนที่ 3: คลิกปุ่ม [Add Plug-In] หรือ [Browse]
+               เลือกไฟล์ "AutoCount.Plugin.BOTExchangeRate.dll"
+               โปรแกรมจะแสดงรายการ "Bank of Thailand Exchange Rate Auto-Sync (v1.0.0.0)"
+
+   ขั้นตอนที่ 4: ติ๊กเครื่องหมายถูกที่ช่อง [Active] แล้วกดปุ่ม [Save] และ [Close]
+
+   ขั้นตอนที่ 5: ปิดและเปิดโปรแกรม AutoCount Accounting ใหม่ 1 ครั้ง
+
+3. การเรียกใช้งาน Plug-in ภายใน AutoCount:
+   - เข้าเมนู: General Maintenance >> Currency Maintenance
+   - จะพบปุ่มหรือเมนูย่อย "⚡ Bank of Thailand Exchange Rate Sync"
+   - คลิกเพื่อเปิดหน้าต่าง Config ตรวจสอบ Endpoint และกด "⚡ Sync Now (ดึงทันที)"
+
+4. ตารางข้อมูลที่ Plug-in ทำการอัปเดตใน SQL Server:
+   - ตารางที่ 1: dbo.Currency (Master Table)
+     คอลัมน์: Rate, BuyRate, SellRate, LastModified, LastModifiedBy
+   - ตารางที่ 2: dbo.CurrencyRate (Daily History Table)
+     คอลัมน์: CurrencyCode, RateDate, Rate, BuyRate, SellRate, Remark, CreatedDate, CreatedUser
+
+5. การแก้ไขปัญหา (Troubleshooting):
+   - หากขึ้นข้อความ "Access to the path is denied" ให้คลิกขวาที่ไฟล์ .dll เลือก Properties 
+     แล้วติ๊ก [Unblock] ด้านล่าง จากนั้นกด Apply
+   - หากต้องการ Sync อัตโนมัติในเบื้องหลังโดยไม่ต้องเปิดโปรแกรม AutoCount 
+     สามารถใช้ WebApp หรือตั้ง Windows Task Scheduler เรียกคำสั่ง T-SQL หรือรัน service
