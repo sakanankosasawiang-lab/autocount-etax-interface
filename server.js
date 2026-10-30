@@ -27,9 +27,18 @@ app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Start scheduler and server
-ensureCompanyFolders();
-startScheduler();
+// Start scheduler and server safely
+try {
+  ensureCompanyFolders();
+} catch (e) {
+  console.warn('ensureCompanyFolders warning:', e.message);
+}
+
+try {
+  startScheduler();
+} catch (e) {
+  console.warn('startScheduler warning:', e.message);
+}
 
 if (!process.env.VERCEL && require.main === module) {
   app.listen(PORT, () => {

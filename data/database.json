@@ -148,6 +148,137 @@
   ],
   "logs": [
     {
+      "id": 13,
+      "batch_id": "POC-20261030-7325",
+      "doc_no": "POC-INV-261030-3380",
+      "docNo": "POC-INV-261030-3380",
+      "doc_type": "Credit Note",
+      "doc_date": "2026-10-30",
+      "debtor_code": "DB-002",
+      "debtor_name": "Eurofins Scientific Testing (Thailand)",
+      "companyName": "Eurofins Scientific Testing (Thailand)",
+      "debtor_tax_id": "0105558091234",
+      "debtor_branch": "00001",
+      "total_amount": 5350,
+      "tax_amount": 350,
+      "net_amount": 5000,
+      "status": "สร้างเอกสารไม่สำเร็จ",
+      "status_raw": "FAILED",
+      "error_code": "ERR_REASON_CODE_MISSING",
+      "errorCode": "ERR_REASON_CODE_MISSING",
+      "error_message": "Reason Code is mandatory for Credit Note / Debit Note e-Tax document (Slide 14)",
+      "errorDescription": "Reason Code is mandatory for Credit Note / Debit Note e-Tax document (Slide 14)",
+      "detail": "Reason Code is mandatory for Credit Note / Debit Note e-Tax document (Slide 14)",
+      "validation_details": [
+        {
+          "field": "reason_code",
+          "code": "ERR_REASON_CODE_MISSING",
+          "label": "รหัสเหตุผล eTax Reason",
+          "message": "Reason Code is mandatory for Credit Note / Debit Note e-Tax document (Slide 14)"
+        }
+      ],
+      "request_payload": {
+        "doc_no": "POC-INV-261030-3380",
+        "doc_type": "Credit Note",
+        "debtor": {
+          "debtor_code": "DB-002",
+          "debtor_name": "Eurofins Scientific Testing (Thailand)",
+          "tax_id": "0105558091234",
+          "registration_type": "01",
+          "country_code": "TH",
+          "branch_code": "00001",
+          "email": "ap-thailand@eurofins.com",
+          "phone": "+66-26789012",
+          "address": "159 Serm-Mit Tower, Asoke, Bangkok 10110",
+          "is_etax_ready": 1,
+          "missing_fields": "None"
+        },
+        "items": [
+          {
+            "item_code": "LAB-ANL-01",
+            "description": "Testing Service",
+            "qty": 1,
+            "unit_price": 5000
+          }
+        ]
+      },
+      "response_payload": {
+        "statusCode": 422,
+        "status": "Unprocessable Entity",
+        "message": "Reason Code is mandatory for Credit Note / Debit Note e-Tax document (Slide 14)",
+        "data": null
+      },
+      "autocount_doc_guid": null,
+      "etax_uuid": null,
+      "interface_duration_ms": 36,
+      "created_at": "2026-10-30 07:19",
+      "sentAt": "2026-10-30 07:19"
+    },
+    {
+      "id": 12,
+      "batch_id": "POC-20261030-7325",
+      "doc_no": "POC-INV-261030-5141",
+      "docNo": "POC-INV-261030-5141",
+      "doc_type": "Sales Invoice",
+      "doc_date": "2026-10-30",
+      "debtor_code": "DB-001",
+      "debtor_name": "Siam Commercial Distribution Co., Ltd.",
+      "companyName": "Siam Commercial Distribution Co., Ltd.",
+      "debtor_tax_id": "0105551029384",
+      "debtor_branch": "00000",
+      "total_amount": 5350,
+      "tax_amount": 350,
+      "net_amount": 5000,
+      "status": "สร้างเอกสารสำเร็จ",
+      "status_raw": "PASSED",
+      "error_code": "",
+      "errorCode": "",
+      "error_message": "",
+      "errorDescription": "",
+      "detail": "-",
+      "validation_details": [],
+      "request_payload": {
+        "doc_no": "POC-INV-261030-5141",
+        "doc_type": "Sales Invoice",
+        "debtor": {
+          "debtor_code": "DB-001",
+          "debtor_name": "Siam Commercial Distribution Co., Ltd.",
+          "tax_id": "0105551029384",
+          "registration_type": "01",
+          "country_code": "TH",
+          "branch_code": "00000",
+          "email": "finance@scdist.co.th",
+          "phone": "+66-22345678",
+          "address": "88/1 Sukhumvit Rd, Khlong Toei, Bangkok 10110",
+          "is_etax_ready": 1,
+          "missing_fields": "None"
+        },
+        "items": [
+          {
+            "item_code": "LAB-ANL-01",
+            "description": "Testing Service",
+            "qty": 1,
+            "unit_price": 5000
+          }
+        ]
+      },
+      "response_payload": {
+        "statusCode": 201,
+        "status": "Created",
+        "message": "Document 'POC-INV-261030-5141' successfully posted to AutoCount.",
+        "data": {
+          "docNo": "POC-INV-261030-5141",
+          "autoCountGuid": "ac-un5jag621z",
+          "eInvoiceUUID": "TH-ETAX-20261030-49171843"
+        }
+      },
+      "autocount_doc_guid": "ac-un5jag621z",
+      "etax_uuid": "TH-ETAX-20261030-49171843",
+      "interface_duration_ms": 36,
+      "created_at": "2026-10-30 07:19",
+      "sentAt": "2026-10-30 07:19"
+    },
+    {
       "id": 11,
       "docNo": "TIT2503338",
       "companyId": 1,
@@ -278,6 +409,112 @@
       "detail": "ข้อมูลผู้ซื้อ ไม่ครบถ้วน ตามหลักการใบกำกับภาษี ต้องกำหนด Registration Type และ Country Code",
       "errorCode": "ERR_BUYER_REGISTRATION_MISSING",
       "errorDescription": "ข้อมูลผู้ซื้อที่ครบถ้วนตามหลักการ e-Tax Invoice ต้องกำหนด Registration Type (เช่น TXID/NIDN) และ Country Code (เช่น TH)"
+    }
+  ],
+  "debtors": [
+    {
+      "debtor_code": "DB-001",
+      "debtor_name": "Siam Commercial Distribution Co., Ltd.",
+      "tax_id": "0105551029384",
+      "registration_type": "01",
+      "country_code": "TH",
+      "branch_code": "00000",
+      "email": "finance@scdist.co.th",
+      "phone": "+66-22345678",
+      "address": "88/1 Sukhumvit Rd, Khlong Toei, Bangkok 10110",
+      "is_etax_ready": 1,
+      "missing_fields": "None"
+    },
+    {
+      "debtor_code": "DB-002",
+      "debtor_name": "Eurofins Scientific Testing (Thailand)",
+      "tax_id": "0105558091234",
+      "registration_type": "01",
+      "country_code": "TH",
+      "branch_code": "00001",
+      "email": "ap-thailand@eurofins.com",
+      "phone": "+66-26789012",
+      "address": "159 Serm-Mit Tower, Asoke, Bangkok 10110",
+      "is_etax_ready": 1,
+      "missing_fields": "None"
+    },
+    {
+      "debtor_code": "DB-003",
+      "debtor_name": "Apex Petrochemical Public Co., Ltd.",
+      "tax_id": "0107559001827",
+      "registration_type": "01",
+      "country_code": "TH",
+      "branch_code": "00000",
+      "email": "invoice.tax@apexpetro.th",
+      "phone": "+66-28901234",
+      "address": "123 Vibhavadi Rangsit Rd, Chatuchak, Bangkok 10900",
+      "is_etax_ready": 1,
+      "missing_fields": "None"
+    },
+    {
+      "debtor_code": "DB-004",
+      "debtor_name": "Boonrawd Agri-Logistics Partnership",
+      "tax_id": "0103554098172",
+      "registration_type": "01",
+      "country_code": "TH",
+      "branch_code": "00002",
+      "email": "account@boonrawdagri.com",
+      "phone": "+66-23456789",
+      "address": "45 Bangna-Trad Km.12, Samut Prakan 10540",
+      "is_etax_ready": 1,
+      "missing_fields": "None"
+    },
+    {
+      "debtor_code": "DB-005",
+      "debtor_name": "นายสมชาย ประเสริฐยิ่ง (Somchai Trading)",
+      "tax_id": "3100500987654",
+      "registration_type": "02",
+      "country_code": "TH",
+      "branch_code": "00000",
+      "email": "somchai.prs@gmail.com",
+      "phone": "+66-812345678",
+      "address": "12/4 Phahonyothin Rd, Phayathai, Bangkok 10400",
+      "is_etax_ready": 1,
+      "missing_fields": "None"
+    },
+    {
+      "debtor_code": "DB-006",
+      "debtor_name": "Bangkok Fresh Food Mart Co., Ltd.",
+      "tax_id": "0105556012876",
+      "registration_type": "01",
+      "country_code": "TH",
+      "branch_code": "00000",
+      "email": "",
+      "phone": "+66-24567890",
+      "address": "90 Charoen Krung Rd, Bang Kho Laem, Bangkok 10120",
+      "is_etax_ready": 0,
+      "missing_fields": "Email address missing in Debtor Maintenance"
+    },
+    {
+      "debtor_code": "DB-007",
+      "debtor_name": "Mega Wholesale Hub Co., Ltd.",
+      "tax_id": "0105557023910",
+      "registration_type": "01",
+      "country_code": "TH",
+      "branch_code": "00003",
+      "email": "tax@megawholesale.co.th",
+      "phone": "+66(0)2-999-999-EXT#889-INVALID-PHONE-EXCEED-CHAR-LIMIT",
+      "address": "77 Rama 9 Rd, Huai Khwang, Bangkok 10310",
+      "is_etax_ready": 0,
+      "missing_fields": "Phone number violates H21,B10 format rule (>30 chars or invalid format)"
+    },
+    {
+      "debtor_code": "DB-008",
+      "debtor_name": "Quick Express Delivery Ltd.",
+      "tax_id": "010555",
+      "registration_type": "01",
+      "country_code": "TH",
+      "branch_code": "00000",
+      "email": "billing@quickexp.co.th",
+      "phone": "+66-27890123",
+      "address": "33/2 Phetchaburi Rd, Ratchathewi, Bangkok 10400",
+      "is_etax_ready": 0,
+      "missing_fields": "Tax ID must be exactly 13 digits"
     }
   ]
 }

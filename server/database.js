@@ -274,8 +274,12 @@ function loadDB() {
 }
 
 function saveDB(data) {
-  ensureDirSync(path.dirname(DB_FILE));
-  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  try {
+    ensureDirSync(path.dirname(DB_FILE));
+    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('saveDB warning (non-fatal in serverless):', err.message);
+  }
 }
 
 module.exports = {
