@@ -1,9 +1,21 @@
 import sqlite3
 import os
+import shutil
 import json
 from datetime import datetime
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "autocount_interface.db")
+DEFAULT_DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "autocount_interface.db")
+is_vercel = bool(os.environ.get("VERCEL"))
+
+if is_vercel:
+    DB_PATH = "/tmp/autocount_interface.db"
+    if not os.path.exists(DB_PATH) and os.path.exists(DEFAULT_DB_PATH):
+        try:
+            shutil.copy2(DEFAULT_DB_PATH, DB_PATH)
+        except Exception as e:
+            print("Could not copy default DB to /tmp:", e)
+else:
+    DB_PATH = DEFAULT_DB_PATH
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)

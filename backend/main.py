@@ -30,11 +30,24 @@ app.add_middleware(
 )
 
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
-INBOUND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "inbound")
-OUTBOUND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "outbound")
+PUBLIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "public")
+is_vercel = bool(os.environ.get("VERCEL"))
+
+if is_vercel:
+    INBOUND_DIR = "/tmp/inbound"
+    OUTBOUND_DIR = "/tmp/outbound"
+else:
+    INBOUND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "inbound")
+    OUTBOUND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "outbound")
 
 os.makedirs(INBOUND_DIR, exist_ok=True)
 os.makedirs(OUTBOUND_DIR, exist_ok=True)
+
+# Ensure database is initialized
+try:
+    init_db()
+except Exception as e:
+    print("Database init note:", e)
 
 def get_engine() -> AutoCountInterfaceEngine:
     conn = get_db()
@@ -514,7 +527,11 @@ def test_connection():
     return res
 
 # --- Serve Frontend ---
-app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+if os.path.exists(FRONTEND_DIR):
+    app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+
+if os.path.exists(PUBLIC_DIR):
+    app.mount("/public", StaticFiles(directory=PUBLIC_DIR, html=True), name="public")
 
 @app.get("/")
 def serve_index():
@@ -522,3 +539,10 @@ def serve_index():
     if os.path.exists(index_file):
         return FileResponse(index_file)
     return {"message": "AutoCount Interface API Backend running"}
+
+@app.get("/flex")
+def serve_flex():
+    flex_file = os.path.join(PUBLIC_DIR, "index.html")
+    if os.path.exists(flex_file):
+        return FileResponse(flex_file)
+    return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
