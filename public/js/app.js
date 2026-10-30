@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // AUTHENTICATION
 // -------------------------------------------------------------
 function showLogin() {
+  clearLoginForm();
   document.getElementById('view-login').style.display = 'flex';
   document.getElementById('app-wrapper').style.display = 'none';
 }
@@ -82,7 +83,39 @@ async function handleLogin(event) {
 function quickLogin(u, p) {
   document.getElementById('login-username').value = u;
   document.getElementById('login-password').value = p;
-  document.getElementById('form-login').dispatchEvent(new Event('submit'));
+  handleLogin({ preventDefault: () => {} });
+}
+
+function showToast(message, type = 'success') {
+  let toastContainer = document.getElementById('toast-container');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toast-container';
+    toastContainer.style.position = 'fixed';
+    toastContainer.style.top = '20px';
+    toastContainer.style.right = '20px';
+    toastContainer.style.zIndex = '9999';
+    document.body.appendChild(toastContainer);
+  }
+
+  const toast = document.createElement('div');
+  const bgClass = type === 'success' ? 'bg-success text-white' : type === 'danger' ? 'bg-danger text-white' : 'bg-primary text-white';
+  const icon = type === 'success' ? 'fa-circle-check' : type === 'danger' ? 'fa-circle-xmark' : 'fa-circle-info';
+  
+  toast.className = `toast align-items-center ${bgClass} border-0 show shadow-lg mb-2`;
+  toast.setAttribute('role', 'alert');
+  toast.innerHTML = `
+    <div class="d-flex p-2 px-3 align-items-center">
+      <div class="toast-body fs-6 fw-semibold">
+        <i class="fa-solid ${icon} me-2"></i> ${message}
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.parentElement.parentElement.remove()"></button>
+    </div>
+  `;
+  toastContainer.appendChild(toast);
+  setTimeout(() => {
+    toast.remove();
+  }, 4000);
 }
 
 function clearLoginForm() {
@@ -251,6 +284,7 @@ async function triggerSendNow() {
     const data = await res.json();
     if (data.success) {
       const resData = data.results || {};
+      showToast(`นำส่งข้อมูลเสร็จสิ้น: สำเร็จ ${resData.successCount || 0} ไฟล์, ไม่สำเร็จ ${resData.failedCount || 0} ไฟล์`, 'success');
       alert(`นำส่งข้อมูลเสร็จสิ้น!\n• จำนวนที่ตรวจพบ: ${resData.processedCount || 0} ไฟล์\n• สำเร็จ: ${resData.successCount || 0} ไฟล์\n• ไม่สำเร็จ: ${resData.failedCount || 0} ไฟล์`);
       loadHomeData();
     } else {
@@ -273,6 +307,7 @@ async function handleClearDocuments(companyId, companyName) {
     const res = await fetch(`/api/home/clear/${companyId}`, { method: 'POST' });
     const data = await res.json();
     if (data.success) {
+      showToast(data.message, 'success');
       alert(data.message);
       loadHomeData();
     } else {
@@ -348,6 +383,7 @@ async function handleSaveSetup(event) {
     });
     const data = await res.json();
     if (data.success) {
+      showToast('บันทึกการตั้งค่าเรียบร้อยแล้ว', 'success');
       alert('บันทึกการตั้งค่าเรียบร้อยแล้ว');
       loadSetupData();
       // Clear form
@@ -452,6 +488,7 @@ async function handleSaveCompany(event) {
     });
     const data = await res.json();
     if (data.success) {
+      showToast(data.message, 'success');
       alert(data.message);
       resetCompanyForm();
       loadCompanyData();
@@ -599,6 +636,7 @@ async function handleSaveUser(event) {
     });
     const data = await res.json();
     if (data.success) {
+      showToast(data.message, 'success');
       alert(data.message);
       loadUsersData();
     } else {
@@ -616,6 +654,7 @@ async function deleteUser(id, name) {
     const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
     const data = await res.json();
     if (data.success) {
+      showToast(data.message, 'success');
       alert(data.message);
       loadUsersData();
     } else {
