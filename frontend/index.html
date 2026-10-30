@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoCount Interface & e-Tax Tracking Hub | Eurofins</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              800: '#0c4a6e',
+              900: '#082f49'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Font Awesome / Lucide icons & Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <style>
+    body {
+      font-family: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    [v-cloak] { display: none; }
+  </style>
+</head>
+<body class="h-full flex flex-col text-slate-800">
+  <div id="app" v-cloak class="flex flex-col min-h-screen">
+    
+    <!-- Top Navigation Header -->
+    <header class="bg-brand-900 text-white shadow-lg sticky top-0 z-40 border-b border-brand-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          
+          <!-- Logo & Title -->
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center shadow-md font-bold text-xl text-white">
+              AC
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="font-bold text-lg tracking-tight">AutoCount Interface & e-Tax Hub</span>
+                <span class="px-2 py-0.5 text-xs font-semibold rounded bg-sky-500/30 text-sky-200 border border-sky-400/30">POC Engine v2.2</span>
+              </div>
+              <p class="text-xs text-sky-200">Eurofins Food Testing (Thailand) &bull; Account Book: {{ config.account_book_id || 'ACC-TH-01' }}</p>
+            </div>
+          </div>
+
+          <!-- AutoCount Connection Status & Quick Action -->
+          <div class="flex items-center space-x-3">
+            <a href="/" class="hidden sm:inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-sky-950/80 hover:bg-sky-900 text-sky-200 border border-sky-700 transition">
+              <span>← หน้าหลัก Flex Interface</span>
+            </a>
+
+            <div class="hidden md:flex items-center bg-brand-800/80 px-3 py-1.5 rounded-full border border-brand-700 text-xs">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse mr-2"></span>
+              <span class="text-slate-300 mr-1">Developer ID:</span>
+              <span class="font-mono text-emerald-300 font-semibold">{{ config.developer_id || 'Piyarathl@gmail.com' }}</span>
+            </div>
+
+            <button @click="testAutoCountConnection" :disabled="testingConnection"
+                    class="hidden sm:inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-sky-800 hover:bg-sky-700 text-sky-100 border border-sky-600 transition">
+              <span v-if="testingConnection">กำลังทดสอบ...</span>
+              <span v-else>ทดสอบเชื่อมต่อ API</span>
+            </button>
+
+            <button @click="openPocModal" class="inline-flex items-center px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-md transition transform active:scale-95">
+              <span>+ รัน POC Interface</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="bg-brand-950/60 border-t border-brand-800/60">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav class="flex space-x-8 text-sm">
+            <button @click="currentTab = 'dashboard'" :class="tabClass('dashboard')" class="py-3 px-1 border-b-2 font-medium flex items-center space-x-2">
+              <span>📊 แดชบอร์ดภาพรวม (Dashboard)</span>
+            </button>
+            <button @click="currentTab = 'logs'" :class="tabClass('logs')" class="py-3 px-1 border-b-2 font-medium flex items-center space-x-2">
+              <span>📑 ประวัติการ Interface ละเอียด (Logfile)</span>
+              <span v-if="stats.summary" class="ml-1.5 px-2 py-0.2 rounded-full text-xs font-semibold bg-sky-700/60 text-sky-100">
+                {{ stats.summary.total }}
+              </span>
+            </button>
+            <button @click="currentTab = 'simulator'" :class="tabClass('simulator')" class="py-3 px-1 border-b-2 font-medium flex items-center space-x-2">
+              <span>🚀 ศูนย์ทดสอบ POC (Testing Center)</span>
+            </button>
+            <button @click="currentTab = 'debtors'" :class="tabClass('debtors')" class="py-3 px-1 border-b-2 font-medium flex items-center space-x-2">
+              <span>👥 ข้อมูลลูกค้า (Debtor Master)</span>
+            </button>
+            <button @click="currentTab = 'settings'" :class="tabClass('settings')" class="py-3 px-1 border-b-2 font-medium flex items-center space-x-2">
+              <span>⚙️ ตั้งค่าระบบ (SETUP)</span>
+            </button>
+          </nav>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+      <!-- ========================================== -->
+      <!-- TAB 1: DASHBOARD OVERVIEW                 -->
+      <!-- ========================================== -->
+      <div v-show="currentTab === 'dashboard'" class="space-y-6">
+        
+        <!-- Today Banner / Alert Bar -->
+        <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-xl p-4 text-white shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-3 border border-blue-800">
+          <div class="flex items-center space-x-3">
+            <div class="p-2.5 rounded-lg bg-blue-800/80 border border-blue-700">
+              <span class="text-xl">⚡</span>
+            </div>
+            <div>
+              <h2 class="font-semibold text-base">ระบบเชื่อมโยงข้อมูล AutoCount Accounting e-Tax Interface</h2>
+              <p class="text-xs text-blue-200">
+                รองรับการแปลงและตรวจสอบรูปแบบเอกสารตามมาตรฐานกรมสรรพากร และ AutoCount Plug-in Rules (Slide 14)
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-4 text-xs bg-slate-900/60 px-3.5 py-2 rounded-lg border border-slate-700">
+            <div>
+              <span class="text-slate-400">รอบส่งข้อมูลวันนี้:</span>
+              <span class="font-bold text-white ml-1">{{ stats.today.total }} รายการ</span>
+            </div>
+            <div class="h-4 w-px bg-slate-700"></div>
+            <div>
+              <span class="text-emerald-400 font-semibold">สำเร็จ: {{ stats.today.passed }}</span>
+            </div>
+            <div class="h-4 w-px bg-slate-700"></div>
+            <div>
+              <span class="text-rose-400 font-semibold">ไม่ผ่าน: {{ stats.today.failed }}</span>
+            </div>
+            <div class="h-4 w-px bg-slate-700"></div>
+            <div>
+              <span class="text-amber-400 font-semibold">ค้าง: {{ stats.today.pending }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 Summary KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          <!-- Card 1: Total Interfaced -->
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between hover:shadow-md transition">
+            <div class="flex items-center justify-between text-slate-500 mb-2">
+              <span class="text-xs font-semibold uppercase tracking-wider">จำนวนที่ส่งทั้งหมด (Total)</span>
+              <span class="p-2 rounded-lg bg-blue-50 text-blue-600 text-sm">📁</span>
+            </div>
+            <div class="flex items-baseline justify-between">
+              <span class="text-3xl font-bold text-slate-900">{{ stats.summary.total }}</span>
+              <span class="text-xs text-slate-500">เอกสารสะสม</span>
+            </div>
+            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+              <span>มูลค่าเอกสารรวม:</span>
+              <span class="font-mono font-semibold text-slate-700">฿{{ formatNumber(stats.summary.total_value) }}</span>
+            </div>
+          </div>
+
+          <!-- Card 2: Passed -->
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-emerald-100 border-l-4 border-l-emerald-500 flex flex-col justify-between hover:shadow-md transition">
+            <div class="flex items-center justify-between text-slate-500 mb-2">
+              <span class="text-xs font-semibold uppercase tracking-wider text-emerald-800">ผ่าน / สำเร็จ (Passed)</span>
+              <span class="p-2 rounded-lg bg-emerald-50 text-emerald-600 text-sm">✅</span>
+            </div>
+            <div class="flex items-baseline justify-between">
+              <span class="text-3xl font-bold text-emerald-600">{{ stats.summary.passed }}</span>
+              <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                {{ stats.summary.pass_rate }}%
+              </span>
+            </div>
+            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-emerald-700">
+              <span>ออก e-Tax UUID และลง AutoCount เรียบร้อย</span>
+            </div>
+          </div>
+
+          <!-- Card 3: Failed -->
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-rose-100 border-l-4 border-l-rose-500 flex flex-col justify-between hover:shadow-md transition">
+            <div class="flex items-center justify-between text-slate-500 mb-2">
+              <span class="text-xs font-semibold uppercase tracking-wider text-rose-800">ไม่สำเร็จ (Failed / Error)</span>
+              <span class="p-2 rounded-lg bg-rose-50 text-rose-600 text-sm">❌</span>
+            </div>
+            <div class="flex items-baseline justify-between">
+              <span class="text-3xl font-bold text-rose-600">{{ stats.summary.failed }}</span>
+              <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800">
+                {{ stats.summary.total > 0 ? (stats.summary.failed / stats.summary.total * 100).toFixed(1) : 0 }}%
+              </span>
+            </div>
+            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-rose-700">
+              <span class="truncate">ติดข้อกำหนดข้อมูล (Slide 14)</span>
+              <button @click="filterLogsByStatus('FAILED')" class="underline hover:text-rose-900 font-medium">ดูรายการ</button>
+            </div>
+          </div>
+
+          <!-- Card 4: Pending -->
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-amber-100 border-l-4 border-l-amber-500 flex flex-col justify-between hover:shadow-md transition">
+            <div class="flex items-center justify-between text-slate-500 mb-2">
+              <span class="text-xs font-semibold uppercase tracking-wider text-amber-800">ค้างส่ง (Pending / In Queue)</span>
+              <span class="p-2 rounded-lg bg-amber-50 text-amber-600 text-sm">⏳</span>
+            </div>
+            <div class="flex items-baseline justify-between">
+              <span class="text-3xl font-bold text-amber-600">{{ stats.summary.pending }}</span>
+              <span class="text-xs text-amber-600 font-medium">รอกวาดข้อมูล</span>
+            </div>
+            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-amber-700">
+              <span>ไฟล์รอในโฟลเดอร์ Inbound</span>
+              <button @click="filterLogsByStatus('PENDING')" class="underline hover:text-amber-900 font-medium">ดูคิว</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- Chart 1: Interface Trend (2 cols) -->
+          <div class="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="font-bold text-slate-800 text-sm">แนวโน้มผลการ Interface รายวัน (Daily Interface Trends)</h3>
+                <p class="text-xs text-slate-500">เปรียบเทียบจำนวนสำเร็จ (Passed) และไม่สำเร็จ (Failed) ย้อนหลัง</p>
+              </div>
+              <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">อัปเดตอัตโนมัติ</span>
+            </div>
+            <div class="h-64">
+              <canvas id="trendChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 2: Success Rate Donut -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+            <div>
+              <h3 class="font-bold text-slate-800 text-sm mb-1">สัดส่วนสถานะการส่ง (Status Distribution)</h3>
+              <p class="text-xs text-slate-500 mb-3">สรุปผลลัพธ์การนำส่งทั้งหมดในระบบ</p>
+            </div>
+            <div class="h-52 relative flex items-center justify-center">
+              <canvas id="statusChart"></canvas>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center text-xs mt-3 pt-3 border-t border-slate-100">
+              <div class="bg-emerald-50 p-1.5 rounded">
+                <span class="block text-emerald-700 font-bold">{{ stats.summary.passed }}</span>
+                <span class="text-emerald-600 text-[10px]">ผ่าน</span>
+              </div>
+              <div class="bg-rose-50 p-1.5 rounded">
+                <span class="block text-rose-700 font-bold">{{ stats.summary.failed }}</span>
+                <span class="text-rose-600 text-[10px]">ไม่ผ่าน</span>
+              </div>
+              <div class="bg-amber-50 p-1.5 rounded">
+                <span class="block text-amber-700 font-bold">{{ stats.summary.pending }}</span>
+                <span class="text-amber-600 text-[10px]">ค้าง</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Secondary Charts & Breakdown -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- Top Validation Errors Breakdown -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h3 class="font-bold text-slate-800 text-sm">สาเหตุที่ส่งไม่สำเร็จบ่อยสุด (Top Validation Errors)</h3>
+                <p class="text-xs text-slate-500">ตามข้อกำหนดสำคัญของข้อมูลใบกำกับภาษี (Slide 14)</p>
+              </div>
+            </div>
+            <div class="space-y-3 mt-4">
+              <div v-for="err in stats.top_errors" :key="err.code" class="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="font-mono text-xs font-bold text-rose-700">{{ err.code }}</span>
+                  <span class="px-2 py-0.5 text-xs font-semibold rounded bg-rose-100 text-rose-800">{{ err.count }} ครั้ง</span>
+                </div>
+                <p class="text-xs text-slate-700">{{ err.message }}</p>
+              </div>
+              <div v-if="!stats.top_errors || stats.top_errors.length === 0" class="text-center py-6 text-slate-400 text-xs">
+                ไม่มีข้อผิดพลาดที่บันทึกไว้
+              </div>
+            </div>
+          </div>
+
+          <!-- Document Type Breakdown -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="font-bold text-slate-800 text-sm mb-1">สัดส่วนประเภทเอกสาร (Document Types)</h3>
+            <p class="text-xs text-slate-500 mb-4">Sales Invoice, AR Invoice, Credit Note (CN), Debit Note (DN)</p>
+            <div class="space-y-3">
+              <div v-for="t in stats.type_breakdown" :key="t.doc_type" class="flex items-center justify-between p-2.5 rounded-lg border border-slate-100 hover:bg-slate-50">
+                <div class="flex items-center space-x-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                  <span class="text-xs font-semibold text-slate-700">{{ t.doc_type }}</span>
+                </div>
+                <div class="flex items-center space-x-3 text-xs">
+                  <span class="text-slate-500">ทั้งหมด: <strong class="text-slate-800">{{ t.count }}</strong></span>
+                  <span class="text-emerald-600 font-medium">สำเร็จ: {{ t.passed }}</span>
+                  <span class="text-slate-400">({{ t.count > 0 ? Math.round(t.passed / t.count * 100) : 0 }}%)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 2: DETAILED INTERFACE LOGS (LOGFILE)   -->
+      <!-- ========================================== -->
+      <div v-show="currentTab === 'logs'" class="space-y-4">
+        
+        <!-- Filter Bar -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          
+          <!-- Status Pills -->
+          <div class="flex items-center space-x-1.5 overflow-x-auto text-xs">
+            <button @click="setLogStatusFilter('ALL')" :class="statusFilterClass('ALL')" class="px-3 py-1.5 rounded-lg font-medium transition">
+              ทั้งหมด (All)
+            </button>
+            <button @click="setLogStatusFilter('PASSED')" :class="statusFilterClass('PASSED')" class="px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-1">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span>ผ่าน (Passed)</span>
+            </button>
+            <button @click="setLogStatusFilter('FAILED')" :class="statusFilterClass('FAILED')" class="px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-1">
+              <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+              <span>ไม่ผ่าน (Failed)</span>
+            </button>
+            <button @click="setLogStatusFilter('PENDING')" :class="statusFilterClass('PENDING')" class="px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-1">
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+              <span>ค้าง (Pending)</span>
+            </button>
+          </div>
+
+          <!-- Search & Select Type -->
+          <div class="flex items-center space-x-2 flex-1 max-w-md">
+            <select v-model="logFilters.doc_type" @change="fetchLogs" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-slate-50 focus:bg-white outline-none">
+              <option value="ALL">ทุกประเภทเอกสาร</option>
+              <option value="Sales Invoice">Sales Invoice</option>
+              <option value="AR Invoice">AR Invoice</option>
+              <option value="Credit Note">Credit Note (CN)</option>
+              <option value="Debit Note">Debit Note (DN)</option>
+            </select>
+
+            <div class="relative flex-1">
+              <input type="text" v-model="logFilters.search" @input="debounceSearch"
+                     placeholder="ค้นหาเลขที่เอกสาร, ชื่อลูกค้า, รหัส Error..."
+                     class="w-full text-xs pl-8 pr-3 py-1.5 border border-slate-300 rounded-lg bg-slate-50 focus:bg-white focus:ring-1 focus:ring-sky-500 outline-none">
+              <span class="absolute left-2.5 top-2 text-slate-400 text-xs">🔍</span>
+            </div>
+
+            <button @click="fetchLogs" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-medium">
+              ค้นหา
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Table View -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-semibold">
+                <tr>
+                  <th class="px-4 py-3">วัน-เวลา / Batch</th>
+                  <th class="px-4 py-3">เลขที่เอกสาร</th>
+                  <th class="px-4 py-3">ประเภท</th>
+                  <th class="px-4 py-3">ข้อมูลลูกค้า (Debtor)</th>
+                  <th class="px-4 py-3 text-right">ยอดรวม (฿)</th>
+                  <th class="px-4 py-3 text-center">สถานะ</th>
+                  <th class="px-4 py-3">ผลการตรวจสอบ / ข้อความ</th>
+                  <th class="px-4 py-3 text-center">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr v-for="item in logData.items" :key="item.id" class="hover:bg-slate-50/80 transition">
+                  <!-- Time & Batch -->
+                  <td class="px-4 py-3 whitespace-nowrap">
+                    <div class="font-medium text-slate-800">{{ item.created_at }}</div>
+                    <div class="font-mono text-[11px] text-slate-400">{{ item.batch_id }}</div>
+                  </td>
+
+                  <!-- Doc No -->
+                  <td class="px-4 py-3 whitespace-nowrap">
+                    <div class="font-mono font-semibold text-sky-700 hover:underline cursor-pointer" @click="viewLogDetail(item.id)">
+                      {{ item.doc_no }}
+                    </div>
+                    <div v-if="item.etax_uuid" class="text-[10px] text-slate-400 truncate max-w-[140px]" title="e-Tax UUID">
+                      UUID: {{ item.etax_uuid }}
+                    </div>
+                  </td>
+
+                  <!-- Doc Type -->
+                  <td class="px-4 py-3 whitespace-nowrap">
+                    <span class="px-2 py-0.5 rounded text-[11px] font-medium"
+                          :class="{
+                            'bg-blue-50 text-blue-700 border border-blue-200': item.doc_type.includes('Invoice'),
+                            'bg-purple-50 text-purple-700 border border-purple-200': item.doc_type === 'Credit Note',
+                            'bg-orange-50 text-orange-700 border border-orange-200': item.doc_type === 'Debit Note'
+                          }">
+                      {{ item.doc_type }}
+                    </span>
+                  </td>
+
+                  <!-- Debtor -->
+                  <td class="px-4 py-3">
+                    <div class="font-medium text-slate-800 truncate max-w-[180px]">{{ item.debtor_name }}</div>
+                    <div class="font-mono text-[11px] text-slate-400">
+                      Code: {{ item.debtor_code }} | TaxID: {{ item.debtor_tax_id || '-' }}
+                    </div>
+                  </td>
+
+                  <!-- Amount -->
+                  <td class="px-4 py-3 text-right font-mono font-medium text-slate-800 whitespace-nowrap">
+                    {{ formatNumber(item.total_amount) }}
+                  </td>
+
+                  <!-- Status Badge -->
+                  <td class="px-4 py-3 text-center whitespace-nowrap">
+                    <span v-if="item.status === 'PASSED'" class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+                      ผ่าน (Passed)
+                    </span>
+                    <span v-else-if="item.status === 'FAILED'" class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-100 text-rose-800">
+                      <span class="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5"></span>
+                      ไม่ผ่าน (Failed)
+                    </span>
+                    <span v-else class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800">
+                      <span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5 animate-pulse"></span>
+                      ค้าง (Pending)
+                    </span>
+                  </td>
+
+                  <!-- Message -->
+                  <td class="px-4 py-3 max-w-xs">
+                    <div v-if="item.status === 'PASSED'" class="text-emerald-700 text-[11px]">
+                      ส่ง AutoCount และออก e-Tax สำเร็จ ({{ item.interface_duration_ms }}ms)
+                    </div>
+                    <div v-else-if="item.status === 'FAILED'" class="text-rose-700 text-[11px] truncate" :title="item.error_message">
+                      <strong class="font-mono text-rose-800">[{{ item.error_code }}]</strong> {{ item.error_message }}
+                    </div>
+                    <div v-else class="text-amber-700 text-[11px]">
+                      {{ item.error_message || 'รอรอบส่งอัตโนมัติ' }}
+                    </div>
+                  </td>
+
+                  <!-- Actions -->
+                  <td class="px-4 py-3 text-center whitespace-nowrap">
+                    <div class="flex items-center justify-center space-x-1.5">
+                      <button @click="viewLogDetail(item.id)" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition" title="ดูรายละเอียดแบบเต็ม">
+                        ดูผลละเอียด
+                      </button>
+                      <button v-if="item.status === 'FAILED'" @click="retryLog(item.id)" class="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-medium transition" title="ลองส่งใหม่">
+                        ส่งใหม่ ↻
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr v-if="logData.items.length === 0">
+                  <td colspan="8" class="text-center py-10 text-slate-400">
+                    ไม่พบข้อมูลประวัติการ Interface ตามเงื่อนไขที่เลือก
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
+            <div>
+              แสดง {{ (logData.page - 1) * logData.page_size + 1 }} - {{ Math.min(logData.page * logData.page_size, logData.total_records) }} จากทั้งหมด {{ logData.total_records }} รายการ
+            </div>
+            <div class="flex items-center space-x-2">
+              <button @click="changePage(logData.page - 1)" :disabled="logData.page <= 1"
+                      class="px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-50">
+                ก่อนหน้า
+              </button>
+              <span>หน้า {{ logData.page }} / {{ logData.total_pages }}</span>
+              <button @click="changePage(logData.page + 1)" :disabled="logData.page >= logData.total_pages"
+                      class="px-2.5 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-50">
+                ถัดไป
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 3: POC TESTING CENTER                  -->
+      <!-- ========================================== -->
+      <div v-show="currentTab === 'simulator'" class="space-y-6">
+        
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+          <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">ศูนย์ทดสอบ Proof of Concept (AutoCount Interface POC)</h2>
+              <p class="text-xs text-slate-500 mt-0.5">
+                ทดสอบการ Interface ส่งข้อมูลใบกำกับภาษีเข้า AutoCount API ด้วย Developer ID: <strong class="text-sky-700">{{ config.developer_id }}</strong>
+              </p>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-xs text-slate-500">จำนวนที่ต้องการทดสอบ:</span>
+              <input type="number" v-model="pocCount" min="1" max="20" class="w-16 px-2 py-1 text-xs border border-slate-300 rounded font-semibold text-center">
+            </div>
+          </div>
+
+          <!-- Preset Buttons Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
+            
+            <!-- Preset 1 -->
+            <div class="border border-slate-200 rounded-xl p-4 hover:border-emerald-400 hover:shadow-sm transition flex flex-col justify-between">
+              <div>
+                <div class="flex items-center space-x-2 mb-2">
+                  <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">1</span>
+                  <h4 class="font-semibold text-slate-800 text-sm">Standard Invoices</h4>
+                </div>
+                <p class="text-xs text-slate-600 mb-3">
+                  จำลองการส่งใบกำกับภาษีปกติที่มีข้อมูลครบถ้วน (Debtor ครบ 13 หลัก, อีเมล, โทรศัพท์ถูกต้อง) ผลลัพธ์: <strong class="text-emerald-600">ผ่าน 100%</strong>
+                </p>
+              </div>
+              <button @click="triggerPocBatch('STANDARD')" :disabled="pocLoading"
+                      class="w-full py-2 px-3 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center justify-center space-x-1">
+                <span>ยิงชุดข้อมูลมาตรฐาน (Passed Only)</span>
+              </button>
+            </div>
+
+            <!-- Preset 2 -->
+            <div class="border border-slate-200 rounded-xl p-4 hover:border-blue-400 hover:shadow-sm transition flex flex-col justify-between">
+              <div>
+                <div class="flex items-center space-x-2 mb-2">
+                  <span class="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">2</span>
+                  <h4 class="font-semibold text-slate-800 text-sm">Mixed Scenarios (Slide 14)</h4>
+                </div>
+                <p class="text-xs text-slate-600 mb-3">
+                  ทดสอบคละกรณี: ผ่าน + ไม่ผ่าน (ขาด Tax ID, ผิด Format เบอร์โทร H21/B10, ขาด Email, ขาด CN Reason) เพื่อทดสอบ <strong class="text-rose-600">Error Handling</strong>
+                </p>
+              </div>
+              <button @click="triggerPocBatch('MIXED')" :disabled="pocLoading"
+                      class="w-full py-2 px-3 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition flex items-center justify-center space-x-1">
+                <span>ยิงชุดข้อมูลคละกรณี (Mixed Cases)</span>
+              </button>
+            </div>
+
+            <!-- Preset 3 -->
+            <div class="border border-slate-200 rounded-xl p-4 hover:border-purple-400 hover:shadow-sm transition flex flex-col justify-between">
+              <div>
+                <div class="flex items-center space-x-2 mb-2">
+                  <span class="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xs">3</span>
+                  <h4 class="font-semibold text-slate-800 text-sm">CN / DN Reason Checks</h4>
+                </div>
+                <p class="text-xs text-slate-600 mb-3">
+                  ทดสอบใบลดหนี้ (Credit Note) และใบเพิ่มหนี้ (Debit Note) ตรวจสอบรหัส eTax Reason ETR01-ETR06 ตามที่กำหนดใน Slide 14
+                </p>
+              </div>
+              <button @click="triggerPocBatch('CREDIT_DEBIT_NOTE')" :disabled="pocLoading"
+                      class="w-full py-2 px-3 text-xs font-semibold rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition flex items-center justify-center space-x-1">
+                <span>ยิงชุดใบลดหนี้ / เพิ่มหนี้ (CN / DN)</span>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Live Output Console -->
+          <div v-if="pocResult" class="mt-6 pt-5 border-t border-slate-200">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center space-x-2">
+                <span class="font-bold text-xs text-slate-800">ผลการรันชุดทดสอบล่าสุด (Batch ID: {{ pocResult.batch_id }})</span>
+                <span class="px-2 py-0.5 rounded text-xs bg-emerald-100 text-emerald-800 font-semibold">ผ่าน: {{ pocResult.passed }}</span>
+                <span class="px-2 py-0.5 rounded text-xs bg-rose-100 text-rose-800 font-semibold">ไม่ผ่าน: {{ pocResult.failed }}</span>
+              </div>
+              <span class="text-xs text-slate-400">ทั้งหมด {{ pocResult.total_executed }} เอกสาร</span>
+            </div>
+
+            <div class="bg-slate-900 rounded-lg p-4 font-mono text-xs text-slate-200 overflow-x-auto max-h-72">
+              <div v-for="(item, idx) in pocResult.items" :key="idx" class="py-1 border-b border-slate-800 flex items-start space-x-3">
+                <span class="text-slate-500">[{{ idx+1 }}]</span>
+                <span :class="item.status === 'PASSED' ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'">
+                  {{ item.status }}
+                </span>
+                <span class="text-sky-300 font-semibold">{{ item.doc_no }}</span>
+                <span class="text-slate-400">({{ item.doc_type }})</span>
+                <span class="text-slate-300">{{ item.debtor_name }}</span>
+                <span v-if="item.status === 'PASSED'" class="text-emerald-300 text-[11px]">
+                  -> AutoCount UUID: {{ item.autocount_doc_guid?.substring(0,8) }}... | e-Tax UUID: {{ item.etax_uuid }}
+                </span>
+                <span v-else class="text-rose-300 text-[11px]">
+                  -> Error: {{ item.error_code }} - {{ item.error_message }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 4: DEBTOR MASTER (ข้อมูลลูกค้า)       -->
+      <!-- ========================================== -->
+      <div v-show="currentTab === 'debtors'" class="space-y-4">
+        
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">ฐานข้อมูลลูกหนี้ (AutoCount Debtor Maintenance)</h2>
+              <p class="text-xs text-slate-500">
+                ตรวจสอบความพร้อมของข้อมูลผู้ซื้อสำหรับระบบ e-Tax Invoice (ตามข้อกำหนดใน Slide 14)
+              </p>
+            </div>
+            <button @click="fetchDebtors" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium">
+              รีเฟรชข้อมูล
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-semibold">
+                <tr>
+                  <th class="px-4 py-2.5">รหัสลูกหนี้</th>
+                  <th class="px-4 py-2.5">ชื่อลูกค้า / นิติบุคคล</th>
+                  <th class="px-4 py-2.5">Tax ID (13 หลัก)</th>
+                  <th class="px-4 py-2.5">ประเภท / ประเทศ</th>
+                  <th class="px-4 py-2.5">อีเมล (Debtor Maintenance)</th>
+                  <th class="px-4 py-2.5">เบอร์โทรศัพท์ (Rule H21,B10)</th>
+                  <th class="px-4 py-2.5 text-center">ความพร้อม e-Tax</th>
+                  <th class="px-4 py-2.5 text-center">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr v-for="d in debtors" :key="d.debtor_code" class="hover:bg-slate-50/80">
+                  <td class="px-4 py-3 font-mono font-semibold text-slate-800">{{ d.debtor_code }}</td>
+                  <td class="px-4 py-3 font-medium text-slate-800">{{ d.debtor_name }}</td>
+                  <td class="px-4 py-3 font-mono">
+                    <span :class="d.tax_id && d.tax_id.length === 13 ? 'text-slate-700' : 'text-rose-600 font-bold bg-rose-50 px-1 py-0.5 rounded'">
+                      {{ d.tax_id || 'ไม่ระบุ' }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-slate-600">{{ d.registration_type || '01' }} / {{ d.country_code || 'TH' }}</td>
+                  <td class="px-4 py-3">
+                    <span v-if="d.email" class="text-slate-700">{{ d.email }}</span>
+                    <span v-else class="text-rose-600 font-bold bg-rose-50 px-1.5 py-0.5 rounded text-[11px]">
+                      ⚠️ ไม่มีอีเมล
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 font-mono text-[11px]">
+                    <span v-if="d.phone && d.phone.length <= 30 && !d.phone.includes('INVALID')" class="text-slate-700">{{ d.phone }}</span>
+                    <span v-else class="text-rose-600 font-bold bg-rose-50 px-1.5 py-0.5 rounded text-[10px]" title="เบอร์โทรผิดรูปแบบตามกฎ H21,B10">
+                      ⚠️ ผิด Format H21,B10
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-center whitespace-nowrap">
+                    <span v-if="d.is_etax_ready" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+                      ✓ พร้อมส่ง e-Tax
+                    </span>
+                    <span v-else class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-100 text-rose-800" :title="d.missing_fields">
+                      ✕ ข้อมูลไม่ครบ
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-center whitespace-nowrap">
+                    <button v-if="!d.is_etax_ready" @click="fixDebtor(d.debtor_code)"
+                            class="px-2.5 py-1 rounded bg-sky-100 hover:bg-sky-200 text-sky-800 text-[11px] font-semibold transition">
+                      แก้ไขให้ถูกต้อง
+                    </button>
+                    <span v-else class="text-slate-400 text-[11px]">-</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 5: SYSTEM CONFIGURATION (SETUP)        -->
+      <!-- ========================================== -->
+      <div v-show="currentTab === 'settings'" class="space-y-6">
+        
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+          <h2 class="text-base font-bold text-slate-900 pb-3 border-b border-slate-100 mb-5">
+            ตั้งค่าระบบ Interface & AutoCount Credentials (SETUP)
+          </h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Column 1: AutoCount Credentials -->
+            <div class="space-y-4">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-sky-800 flex items-center">
+                <span class="w-2 h-2 rounded-full bg-sky-600 mr-2"></span>
+                ข้อมูล AutoCount Developer Account
+              </h3>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Developer ID (Registered Email)</label>
+                <input type="text" v-model="configForm.developer_id" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-slate-50 focus:bg-white focus:ring-1 focus:ring-sky-500 font-mono">
+                <p class="text-[11px] text-slate-500 mt-1">ใช้ยืนยันการขอสิทธิ์ใน Plug-In Builder และ Cloud API</p>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Developer Password</label>
+                <div class="relative">
+                  <input :type="showPassword ? 'text' : 'password'" v-model="configForm.developer_password" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-slate-50 focus:bg-white focus:ring-1 focus:ring-sky-500 font-mono">
+                  <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-2 text-xs text-slate-500">
+                    {{ showPassword ? 'ซ่อน' : 'แสดง' }}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">API Base Endpoint</label>
+                <input type="text" v-model="configForm.api_endpoint" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-slate-50 focus:bg-white focus:ring-1 focus:ring-sky-500 font-mono">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Account Book / Database ID</label>
+                <input type="text" v-model="configForm.account_book_id" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-slate-50 focus:bg-white focus:ring-1 focus:ring-sky-500 font-mono">
+              </div>
+            </div>
+
+            <!-- Column 2: Company & Folder Settings -->
+            <div class="space-y-4">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-sky-800 flex items-center">
+                <span class="w-2 h-2 rounded-full bg-sky-600 mr-2"></span>
+                ข้อมูลบริษัท & โฟลเดอร์นำส่ง (Company & Inbound/Outbound)
+              </h3>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อบริษัท (Company Name)</label>
+                <input type="text" v-model="configForm.company_name" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-slate-50 focus:bg-white focus:ring-1 focus:ring-sky-500">
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เลขประจำตัวผู้เสียภาษี (Tax ID)</label>
+                  <input type="text" v-model="configForm.company_tax_id" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-slate-50 focus:bg-white focus:ring-1 focus:ring-sky-500 font-mono">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">รหัสสาขา (Branch Code)</label>
+                  <input type="text" v-model="configForm.company_branch" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-slate-50 focus:bg-white focus:ring-1 focus:ring-sky-500 font-mono">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">โฟลเดอร์ Inbound (.pdf & .txt)</label>
+                <input type="text" v-model="configForm.inbound_dir" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-slate-50 focus:bg-white focus:ring-1 focus:ring-sky-500 font-mono">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">โฟลเดอร์ Outbound (.pdf & .xml)</label>
+                <input type="text" v-model="configForm.outbound_dir" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-slate-50 focus:bg-white focus:ring-1 focus:ring-sky-500 font-mono">
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">ความถี่ในการกวาดส่ง (นาที)</label>
+                  <input type="number" v-model="configForm.sync_interval_mins" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-slate-50 focus:bg-white focus:ring-1 focus:ring-sky-500 font-mono">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">เปิดใช้งานส่งอัตโนมัติ</label>
+                  <select v-model="configForm.auto_sync_enabled" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-slate-50 focus:bg-white">
+                    <option value="true">เปิดใช้งาน (Active)</option>
+                    <option value="false">ปิดใช้งาน (Manual Only)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-slate-200 flex items-center justify-between">
+            <button @click="testAutoCountConnection" :disabled="testingConnection"
+                    class="px-4 py-2 border border-sky-600 text-sky-700 hover:bg-sky-50 rounded-lg text-xs font-semibold transition">
+              <span v-if="testingConnection">กำลังเชื่อมต่อ...</span>
+              <span v-else>ทดสอบการเชื่อมต่อ AutoCount (Verify ID)</span>
+            </button>
+
+            <button @click="saveConfig" class="px-5 py-2 bg-sky-700 hover:bg-sky-800 text-white rounded-lg text-xs font-semibold shadow-sm transition">
+              บันทึกการตั้งค่า
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- ========================================== -->
+    <!-- MODAL: DETAILED LOG INSPECTOR              -->
+    <!-- ========================================== -->
+    <div v-if="selectedLog" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        
+        <!-- Modal Header -->
+        <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="font-bold text-base font-mono text-sky-300">{{ selectedLog.doc_no }}</span>
+              <span class="px-2 py-0.5 rounded text-xs font-semibold"
+                    :class="selectedLog.status === 'PASSED' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40' : 'bg-rose-500/20 text-rose-300 border border-rose-400/40'">
+                {{ selectedLog.status === 'PASSED' ? '✓ สำเร็จ (PASSED)' : '✕ ไม่ผ่าน (FAILED)' }}
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">ประเภท: {{ selectedLog.doc_type }} &bull; วันที่: {{ selectedLog.doc_date }} &bull; Batch: {{ selectedLog.batch_id }}</p>
+          </div>
+          <button @click="selectedLog = null" class="text-slate-400 hover:text-white text-xl font-bold p-1">
+            &times;
+          </button>
+        </div>
+
+        <!-- Modal Body (Scrollable) -->
+        <div class="p-6 space-y-5 overflow-y-auto flex-1 text-xs">
+          
+          <!-- Status Banner if Failed -->
+          <div v-if="selectedLog.status === 'FAILED'" class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-900">
+            <div class="flex items-start space-x-3">
+              <span class="text-xl">⚠️</span>
+              <div>
+                <h4 class="font-bold text-xs">ข้อผิดพลาดในการ Interface: [{{ selectedLog.error_code }}]</h4>
+                <p class="mt-1 text-xs text-rose-700 leading-relaxed">{{ selectedLog.error_message }}</p>
+                <div class="mt-2 text-[11px] text-rose-800 bg-rose-100/60 p-2 rounded">
+                  💡 <strong>คำแนะนำในการแก้ไข:</strong> อัปเดตข้อมูลผู้ซื้อในเมนู Debtor Maintenance หรือระบุรหัสเหตุผลของเอกสารให้ถูกต้อง แล้วกด "ส่งใหม่ (Retry)"
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Document & Debtor Overview -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <div>
+              <span class="text-slate-500 text-[11px] block">ลูกค้า (Debtor)</span>
+              <strong class="text-slate-800 font-semibold text-xs">{{ selectedLog.debtor_name }}</strong>
+              <span class="text-slate-400 text-[10px] block font-mono">({{ selectedLog.debtor_code }})</span>
+            </div>
+            <div>
+              <span class="text-slate-500 text-[11px] block">Tax ID / สาขา</span>
+              <strong class="font-mono text-slate-800 text-xs">{{ selectedLog.debtor_tax_id || '-' }}</strong>
+              <span class="text-slate-400 text-[10px] block font-mono">สาขา: {{ selectedLog.debtor_branch }}</span>
+            </div>
+            <div>
+              <span class="text-slate-500 text-[11px] block">มูลค่ารวมสุทธิ (Total)</span>
+              <strong class="text-slate-900 font-mono text-sm font-bold">฿{{ formatNumber(selectedLog.total_amount) }}</strong>
+              <span class="text-slate-400 text-[10px] block">VAT 7%: ฿{{ formatNumber(selectedLog.tax_amount) }}</span>
+            </div>
+            <div>
+              <span class="text-slate-500 text-[11px] block">AutoCount & e-Tax Tracking</span>
+              <span class="font-mono text-[10px] text-sky-700 block truncate" :title="selectedLog.etax_uuid">UUID: {{ selectedLog.etax_uuid || '-' }}</span>
+              <span class="text-slate-400 text-[10px] block">เวลา: {{ selectedLog.interface_duration_ms }} ms</span>
+            </div>
+          </div>
+
+          <!-- Validation Checklist (Slide 14 Rules) -->
+          <div>
+            <h4 class="font-bold text-slate-800 mb-2">ผลการตรวจสอบตามเงื่อนไข AutoCount & e-Tax (Validation Checklist):</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              
+              <div class="p-2.5 rounded-lg border flex items-center justify-between"
+                   :class="hasError('ERR_TAXID') ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'">
+                <span>1. เลขประจำตัวผู้เสียภาษี 13 หลัก (Tax ID)</span>
+                <span class="font-bold">{{ hasError('ERR_TAXID') ? '✕ ไม่ผ่าน' : '✓ ผ่าน' }}</span>
+              </div>
+
+              <div class="p-2.5 rounded-lg border flex items-center justify-between"
+                   :class="hasError('ERR_EMAIL') ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'">
+                <span>2. อีเมลใน Debtor Maintenance</span>
+                <span class="font-bold">{{ hasError('ERR_EMAIL') ? '✕ ไม่ผ่าน' : '✓ ผ่าน' }}</span>
+              </div>
+
+              <div class="p-2.5 rounded-lg border flex items-center justify-between"
+                   :class="hasError('ERR_PHONE') ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'">
+                <span>3. รูปแบบเบอร์โทรศัพท์ (Rule H21,B10)</span>
+                <span class="font-bold">{{ hasError('ERR_PHONE') ? '✕ ไม่ผ่าน' : '✓ ผ่าน' }}</span>
+              </div>
+
+              <div class="p-2.5 rounded-lg border flex items-center justify-between"
+                   :class="hasError('ERR_REASON') ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'">
+                <span>4. รหัสเหตุผลใบลดหนี้/เพิ่มหนี้ (CN/DN Reason)</span>
+                <span class="font-bold">{{ hasError('ERR_REASON') ? '✕ ไม่ผ่าน' : '✓ ผ่าน' }}</span>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Payloads Inspector -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex space-x-2">
+                <button @click="payloadTab = 'request'" :class="payloadTab === 'request' ? 'bg-sky-700 text-white' : 'bg-slate-200 text-slate-700'" class="px-2.5 py-1 rounded font-medium text-xs">
+                  Request Payload (JSON)
+                </button>
+                <button @click="payloadTab = 'response'" :class="payloadTab === 'response' ? 'bg-sky-700 text-white' : 'bg-slate-200 text-slate-700'" class="px-2.5 py-1 rounded font-medium text-xs">
+                  AutoCount Response (JSON)
+                </button>
+              </div>
+              <button @click="copyPayload" class="text-sky-600 hover:underline text-xs">คัดลอก JSON</button>
+            </div>
+
+            <div class="bg-slate-900 rounded-xl p-3.5 font-mono text-slate-300 text-[11px] overflow-x-auto max-h-56">
+              <pre>{{ JSON.stringify(payloadTab === 'request' ? selectedLog.request_payload : selectedLog.response_payload, null, 2) }}</pre>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="px-6 py-3 bg-slate-100 border-t border-slate-200 flex items-center justify-between">
+          <button @click="selectedLog = null" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 font-medium hover:bg-white text-xs">
+            ปิดหน้าต่าง
+          </button>
+          
+          <div class="flex space-x-2">
+            <button v-if="selectedLog.status === 'FAILED'" @click="retryLog(selectedLog.id)" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold text-xs transition">
+              ลองส่งใหม่ (Retry Interface)
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Application Logic -->
+  <script>
+    const { createApp, ref, reactive, onMounted, nextTick } = Vue;
+
+    createApp({
+      setup() {
+        const currentTab = ref('dashboard');
+        const showPassword = ref(false);
+        const testingConnection = ref(false);
+        const pocLoading = ref(false);
+        const pocCount = ref(5);
+        const pocResult = ref(null);
+        const selectedLog = ref(null);
+        const payloadTab = ref('request');
+
+        let trendChartInstance = null;
+        let statusChartInstance = null;
+        let searchTimer = null;
+
+        const stats = reactive({
+          summary: { total: 0, passed: 0, failed: 0, pending: 0, pass_rate: 0, total_value: 0 },
+          today: { total: 0, passed: 0, failed: 0, pending: 0 },
+          daily_trends: [],
+          type_breakdown: [],
+          top_errors: []
+        });
+
+        const logFilters = reactive({
+          status: 'ALL',
+          doc_type: 'ALL',
+          search: '',
+          page: 1,
+          page_size: 15
+        });
+
+        const logData = reactive({
+          items: [],
+          page: 1,
+          page_size: 15,
+          total_records: 0,
+          total_pages: 1
+        });
+
+        const debtors = ref([]);
+        const config = ref({});
+        const configForm = reactive({
+          developer_id: '',
+          developer_password: '',
+          api_endpoint: '',
+          account_book_id: '',
+          company_name: '',
+          company_tax_id: '',
+          company_branch: '',
+          sync_interval_mins: '15',
+          auto_sync_enabled: 'true',
+          inbound_dir: '',
+          outbound_dir: ''
+        });
+
+        // Tab styling helper
+        const tabClass = (tab) => {
+          return currentTab.value === tab
+            ? 'border-sky-400 text-sky-300 font-semibold'
+            : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-400';
+        };
+
+        const statusFilterClass = (st) => {
+          return logFilters.status === st
+            ? 'bg-sky-700 text-white font-bold'
+            : 'bg-slate-100 text-slate-600 hover:bg-slate-200';
+        };
+
+        const formatNumber = (num) => {
+          if (!num && num !== 0) return '0.00';
+          return Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        };
+
+        const fetchStats = async () => {
+          try {
+            const res = await fetch('/api/stats');
+            const data = await res.json();
+            Object.assign(stats, data);
+            renderCharts();
+          } catch (e) {
+            console.error('Error fetching stats:', e);
+          }
+        };
+
+        const fetchLogs = async () => {
+          try {
+            const q = new URLSearchParams({
+              status: logFilters.status,
+              doc_type: logFilters.doc_type,
+              search: logFilters.search,
+              page: logFilters.page,
+              page_size: logFilters.page_size
+            });
+            const res = await fetch(`/api/logs?${q.toString()}`);
+            const data = await res.json();
+            Object.assign(logData, data);
+          } catch (e) {
+            console.error('Error fetching logs:', e);
+          }
+        };
+
+        const debounceSearch = () => {
+          clearTimeout(searchTimer);
+          searchTimer = setTimeout(() => {
+            logFilters.page = 1;
+            fetchLogs();
+          }, 350);
+        };
+
+        const setLogStatusFilter = (st) => {
+          logFilters.status = st;
+          logFilters.page = 1;
+          fetchLogs();
+        };
+
+        const filterLogsByStatus = (st) => {
+          currentTab.value = 'logs';
+          setLogStatusFilter(st);
+        };
+
+        const changePage = (p) => {
+          if (p >= 1 && p <= logData.total_pages) {
+            logFilters.page = p;
+            fetchLogs();
+          }
+        };
+
+        const fetchDebtors = async () => {
+          try {
+            const res = await fetch('/api/debtors');
+            debtors.value = await res.json();
+          } catch (e) {
+            console.error('Error fetching debtors:', e);
+          }
+        };
+
+        const fixDebtor = async (code) => {
+          try {
+            const res = await fetch(`/api/debtors/${code}/fix`, { method: 'POST' });
+            const data = await res.json();
+            alert(`✅ ${data.message}`);
+            fetchDebtors();
+          } catch (e) {
+            alert('เกิดข้อผิดพลาดในการแก้ไขข้อมูล');
+          }
+        };
+
+        const fetchConfig = async () => {
+          try {
+            const res = await fetch('/api/config');
+            const data = await res.json();
+            config.value = data;
+            Object.assign(configForm, data);
+          } catch (e) {
+            console.error('Error fetching config:', e);
+          }
+        };
+
+        const saveConfig = async () => {
+          try {
+            const res = await fetch('/api/config', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(configForm)
+            });
+            const data = await res.json();
+            alert('✅ บันทึกการตั้งค่าเรียบร้อยแล้ว');
+            fetchConfig();
+          } catch (e) {
+            alert('เกิดข้อผิดพลาดในการบันทึก');
+          }
+        };
+
+        const testAutoCountConnection = async () => {
+          testingConnection.value = true;
+          try {
+            const res = await fetch('/api/config/test-connection', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+              alert(`✅ เชื่อมต่อ AutoCount สำเร็จ!\n\nDeveloper ID: ${data.developer_id}\nAccount Book: ${data.account_book}\nServer: ${data.server_version}\nModules: ${data.modules_active.join(', ')}\nDuration: ${data.duration_ms} ms`);
+            } else {
+              alert(`❌ เชื่อมต่อไม่สำเร็จ: ${data.message}`);
+            }
+          } catch (e) {
+            alert('ไม่สามารถติดต่อเซิร์ฟเวอร์ได้');
+          } finally {
+            testingConnection.value = false;
+          }
+        };
+
+        const triggerPocBatch = async (scenario) => {
+          pocLoading.value = true;
+          try {
+            const res = await fetch('/api/interface/run-poc', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ scenario, count: Number(pocCount.value) })
+            });
+            const data = await res.json();
+            pocResult.value = data;
+            // Refresh logs & stats
+            fetchStats();
+            fetchLogs();
+          } catch (e) {
+            alert('เกิดข้อผิดพลาดในการรัน POC');
+          } finally {
+            pocLoading.value = false;
+          }
+        };
+
+        const openPocModal = () => {
+          currentTab.value = 'simulator';
+        };
+
+        const viewLogDetail = async (id) => {
+          try {
+            const res = await fetch(`/api/logs/${id}`);
+            selectedLog.value = await res.json();
+          } catch (e) {
+            alert('ไม่สามารถดึงข้อมูลรายละเอียดได้');
+          }
+        };
+
+        const hasError = (pattern) => {
+          if (!selectedLog.value || !selectedLog.value.error_code) return false;
+          return selectedLog.value.error_code.includes(pattern);
+        };
+
+        const retryLog = async (id) => {
+          try {
+            const res = await fetch(`/api/interface/retry/${id}`, { method: 'POST' });
+            const data = await res.json();
+            alert(`ผลการส่งใหม่: ${data.new_status} (${data.error_message || 'สำเร็จ'})`);
+            if (selectedLog.value && selectedLog.value.id === id) {
+              viewLogDetail(id);
+            }
+            fetchStats();
+            fetchLogs();
+          } catch (e) {
+            alert('เกิดข้อผิดพลาดในการส่งใหม่');
+          }
+        };
+
+        const copyPayload = () => {
+          if (!selectedLog.value) return;
+          const target = payloadTab.value === 'request' ? selectedLog.value.request_payload : selectedLog.value.response_payload;
+          navigator.clipboard.writeText(JSON.stringify(target, null, 2));
+          alert('คัดลอกข้อมูล JSON เรียบร้อยแล้ว');
+        };
+
+        const renderCharts = () => {
+          nextTick(() => {
+            // Trend Chart
+            const trendCanvas = document.getElementById('trendChart');
+            if (trendCanvas) {
+              if (trendChartInstance) trendChartInstance.destroy();
+
+              const labels = stats.daily_trends.map(d => d.date.substring(5)); // MM-DD
+              const passedData = stats.daily_trends.map(d => d.passed);
+              const failedData = stats.daily_trends.map(d => d.failed);
+              const pendingData = stats.daily_trends.map(d => d.pending);
+
+              trendChartInstance = new Chart(trendCanvas, {
+                type: 'bar',
+                data: {
+                  labels: labels,
+                  datasets: [
+                    { label: 'ผ่าน (Passed)', data: passedData, backgroundColor: '#10b981', borderRadius: 4 },
+                    { label: 'ไม่ผ่าน (Failed)', data: failedData, backgroundColor: '#f43f5e', borderRadius: 4 },
+                    { label: 'ค้าง (Pending)', data: pendingData, backgroundColor: '#f59e0b', borderRadius: 4 }
+                  ]
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    x: { stacked: true, grid: { display: false } },
+                    y: { stacked: true, beginAtZero: true, grid: { color: '#f1f5f9' } }
+                  },
+                  plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Prompt', size: 11 } } }
+                  }
+                }
+              });
+            }
+
+            // Status Donut Chart
+            const statusCanvas = document.getElementById('statusChart');
+            if (statusCanvas) {
+              if (statusChartInstance) statusChartInstance.destroy();
+
+              statusChartInstance = new Chart(statusCanvas, {
+                type: 'doughnut',
+                data: {
+                  labels: ['ผ่าน (Passed)', 'ไม่ผ่าน (Failed)', 'ค้าง (Pending)'],
+                  datasets: [{
+                    data: [stats.summary.passed, stats.summary.failed, stats.summary.pending],
+                    backgroundColor: ['#10b981', '#f43f5e', '#f59e0b'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                  }]
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  cutout: '70%',
+                  plugins: {
+                    legend: { display: false }
+                  }
+                }
+              });
+            }
+          });
+        };
+
+        onMounted(() => {
+          fetchStats();
+          fetchLogs();
+          fetchDebtors();
+          fetchConfig();
+        });
+
+        return {
+          currentTab,
+          showPassword,
+          testingConnection,
+          pocLoading,
+          pocCount,
+          pocResult,
+          selectedLog,
+          payloadTab,
+          stats,
+          logFilters,
+          logData,
+          debtors,
+          config,
+          configForm,
+          tabClass,
+          statusFilterClass,
+          formatNumber,
+          fetchStats,
+          fetchLogs,
+          debounceSearch,
+          setLogStatusFilter,
+          filterLogsByStatus,
+          changePage,
+          fetchDebtors,
+          fixDebtor,
+          saveConfig,
+          testAutoCountConnection,
+          triggerPocBatch,
+          openPocModal,
+          viewLogDetail,
+          hasError,
+          retryLog,
+          copyPayload
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AutoCountETaxDocument version="2.0">
+    <Header>
+        <DocNo>POC-INV-261030-6507</DocNo>
+        <DocType>Sales Invoice</DocType>
+        <DocDate>2026-10-30</DocDate>
+        <AccountBook>ACC-TH-EUROFINS-01</AccountBook>
+        <DeveloperID>Piyarathl@gmail.com</DeveloperID>
+        <ETaxUUID>TH-ETAX-20261030-71941A43</ETaxUUID>
+    </Header>
+    <Debtor>
+        <Code>DB-003</Code>
+        <Name>Apex Petrochemical Public Co., Ltd.</Name>
+        <TaxID>0107559001827</TaxID>
+        <Branch>00000</Branch>
+        <Email>invoice.tax@apexpetro.th</Email>
+    </Debtor>
+    <Financials>
+        <Subtotal>1200.00</Subtotal>
+        <TaxRate>7.0%</TaxRate>
+        <TaxAmount>84.00</TaxAmount>
+        <TotalAmount>1284.00</TotalAmount>
+    </Financials>
+</AutoCountETaxDocument>

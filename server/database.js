@@ -1,0 +1,285 @@
+const fs = require('fs');
+const path = require('path');
+
+const isVercel = Boolean(process.env.VERCEL);
+const DEFAULT_DB_FILE = path.join(__dirname, '..', 'data', 'database.json');
+const DB_FILE = isVercel ? path.join('/tmp', 'database.json') : DEFAULT_DB_FILE;
+
+// Initial seed data from PPTX slides
+const initialData = {
+  setup: [
+    {
+      id: 1,
+      name: 'API_TIME_TO_SEND',
+      descTH: 'ความถี่ในส่งข้อมูลอัตโนมัติทุกกี่นาที',
+      descEN: 'Auto Send Interval (Minutes)',
+      value: '10'
+    },
+    {
+      id: 2,
+      name: 'MAIN_DOCUMENT_FOLDER',
+      descTH: 'พาร์ทโฟลเดอร์หลักของระบบ',
+      descEN: 'Main System Document Folder',
+      value: 'C:/Apps/Autocount/etax_data'
+    },
+    {
+      id: 3,
+      name: 'SEARCH_LIMIT',
+      descTH: 'จำนวนวันสูงสุด ในการค้นหาข้อมูล',
+      descEN: 'Max Search Limit in Days',
+      value: '60'
+    },
+    {
+      id: 4,
+      name: 'SQLSV_PASSWORD',
+      descTH: 'SQL รหัสผ่าน',
+      descEN: 'SQL Server Password',
+      value: 'admin_etax'
+    },
+    {
+      id: 5,
+      name: 'SQLSV_SERVER',
+      descTH: 'SQL เซอร์เว่อร์',
+      descEN: 'SQL Server Instance',
+      value: 'ROSSI\\A2006'
+    },
+    {
+      id: 6,
+      name: 'SQLSV_USERNAME',
+      descTH: 'SQL ชื่อเข้าใช้งาน',
+      descEN: 'SQL Server Username',
+      value: 'etax_admin'
+    }
+  ],
+  companies: [
+    {
+      id: 1,
+      name: 'บริษัท ที่ 2',
+      taxId: '10002',
+      branch: '00000',
+      phone: '02-444-5678',
+      folder: 'Narumon',
+      mode: 'ส่งไฟล์คู่ TXT และ PDF',
+      authCode: 'AUTH_COMP2_2025_22100',
+      apiKey: 'API_KEY_ETAX_COMP2_10002',
+      stats: {
+        month: 5,
+        today: 0,
+        success: 0,
+        failed: 0,
+        pending: 0
+      }
+    },
+    {
+      id: 2,
+      name: 'บริษัท ที่ 3',
+      taxId: '10003',
+      branch: '00000',
+      phone: '02-555-1234',
+      folder: 'sahasart',
+      mode: 'ส่งไฟล์คู่ TXT และ PDF',
+      authCode: 'AUTH_COMP3_2025_33211',
+      apiKey: 'API_KEY_ETAX_COMP3_10003',
+      stats: {
+        month: 0,
+        today: 0,
+        success: 0,
+        failed: 0,
+        pending: 0
+      }
+    },
+    {
+      id: 3,
+      name: 'บริษัท ที่ 4',
+      taxId: '10004',
+      branch: '00000',
+      phone: '02-987-6543',
+      folder: 'Number_two_services',
+      mode: 'ส่งไฟล์คู่ TXT และ PDF',
+      authCode: 'AUTH_COMP4_2025_44321',
+      apiKey: 'API_KEY_ETAX_COMP4_10004',
+      stats: {
+        month: 0,
+        today: 0,
+        success: 0,
+        failed: 0,
+        pending: 0
+      }
+    },
+    {
+      id: 4,
+      name: 'บริษัท เฟล็กซ์ ซอฟท์แวร์(ประเทศไทย) จำกัด',
+      taxId: '0105561025138',
+      branch: '00000',
+      phone: '02-123-4567',
+      folder: 'Flex_Software',
+      mode: 'ส่งไฟล์คู่ TXT และ PDF',
+      authCode: 'AUTH_FLEX_2025_998124',
+      apiKey: 'API_KEY_ETAX_FLEX_0105561025138_PROD',
+      stats: {
+        month: 127,
+        today: 10,
+        success: 4,
+        failed: 6,
+        pending: 7
+      }
+    }
+  ],
+  users: [
+    {
+      id: 1,
+      name: 'Arther Staff',
+      username: 'arther',
+      password: 'password123',
+      role: 'Admin',
+      email: 'arther@flexsoftware.co.th',
+      image: '/assets/avatar-arther.svg'
+    },
+    {
+      id: 2,
+      name: 'Admin Staff',
+      username: 'admin',
+      password: 'admin',
+      role: 'Admin',
+      email: 'admin@flexsoftware.co.th',
+      image: '/assets/avatar-admin.svg'
+    },
+    {
+      id: 3,
+      name: 'User 1',
+      username: 'user1',
+      password: 'user123',
+      role: 'User',
+      email: 'user1@flexsoftware.co.th',
+      image: '/assets/avatar-user.svg'
+    }
+  ],
+  logs: [
+    {
+      id: 1,
+      docNo: 'TIT2506075',
+      companyId: 4,
+      companyName: 'บริษัท เฟล็กซ์ ซอฟท์แวร์(ประเทศไทย) จำกัด',
+      serviceCode: 'S06',
+      sentAt: '2025-08-27 11:20',
+      status: 'สร้างเอกสารสำเร็จ',
+      detail: '-',
+      errorCode: null,
+      errorDescription: null
+    },
+    {
+      id: 2,
+      docNo: 'TI-T2506077',
+      companyId: 4,
+      companyName: 'บริษัท เฟล็กซ์ ซอฟท์แวร์(ประเทศไทย) จำกัด',
+      serviceCode: 'S06',
+      sentAt: '2025-08-27 11:20',
+      status: 'สร้างเอกสารสำเร็จ',
+      detail: '-',
+      errorCode: null,
+      errorDescription: null
+    },
+    {
+      id: 3,
+      docNo: 'I-000003',
+      companyId: 4,
+      companyName: 'บริษัท เฟล็กซ์ ซอฟท์แวร์(ประเทศไทย) จำกัด',
+      serviceCode: 'S06',
+      sentAt: '2025-08-27 10:21',
+      status: 'สร้างเอกสารสำเร็จ',
+      detail: '-',
+      errorCode: null,
+      errorDescription: null
+    },
+    {
+      id: 4,
+      docNo: 'TI-T2506077',
+      companyId: 4,
+      companyName: 'บริษัท เฟล็กซ์ ซอฟท์แวร์(ประเทศไทย) จำกัด',
+      serviceCode: 'S06',
+      sentAt: '2025-08-27 09:04',
+      status: 'สร้างเอกสารสำเร็จ',
+      detail: '-',
+      errorCode: null,
+      errorDescription: null
+    },
+    {
+      id: 5,
+      docNo: 'DN-000001',
+      companyId: 4,
+      companyName: 'บริษัท เฟล็กซ์ ซอฟท์แวร์(ประเทศไทย) จำกัด',
+      serviceCode: 'S06',
+      sentAt: '2025-08-27 08:54',
+      status: 'สร้างเอกสารไม่สำเร็จ',
+      detail: 'Case DN / CN ต้องระบุ รหัส eTax Reason แต่ละเอกสาร',
+      errorCode: 'ERR_REASON_CODE_MISSING',
+      errorDescription: 'Case DN / CN ต้องระบุ รหัส eTax Reason แต่ละเอกสาร ตามข้อกำหนดสรรพากร'
+    },
+    {
+      id: 6,
+      docNo: 'DN-000001',
+      companyId: 4,
+      companyName: 'บริษัท เฟล็กซ์ ซอฟท์แวร์(ประเทศไทย) จำกัด',
+      serviceCode: 'S06',
+      sentAt: '2025-08-27 08:51',
+      status: 'สร้างเอกสารไม่สำเร็จ',
+      detail: 'เบอร์โทร ทั้งหมด ไม่ได้ส่ง เพราะ ผิด Format (H21,B10) +ตัวเลข 1-3 หลัก-ตัวเลข หรือเครื่องหมาย <+ หรือ -> ไม่เกิน 30 หลัก',
+      errorCode: 'ERR_PHONE_FORMAT_INVALID',
+      errorDescription: 'เบอร์โทรศัพท์ผิดข้อกำหนด (H21,B10): ต้องเป็นรูปแบบ +ตัวเลข 1-3 หลัก-ตัวเลข หรือเครื่องหมาย <+ หรือ -> ไม่เกิน 30 หลัก'
+    },
+    {
+      id: 7,
+      docNo: 'DN-000001',
+      companyId: 4,
+      companyName: 'บริษัท เฟล็กซ์ ซอฟท์แวร์(ประเทศไทย) จำกัด',
+      serviceCode: 'S06',
+      sentAt: '2025-08-27 08:50',
+      status: 'สร้างเอกสารไม่สำเร็จ',
+      detail: 'ข้อมูลผู้ซื้อ ไม่ครบถ้วน ตามหลักการใบกำกับภาษี ต้องกำหนด Registration Type และ Country Code',
+      errorCode: 'ERR_BUYER_REGISTRATION_MISSING',
+      errorDescription: 'ข้อมูลผู้ซื้อที่ครบถ้วนตามหลักการ e-Tax Invoice ต้องกำหนด Registration Type (เช่น TXID/NIDN) และ Country Code (เช่น TH)'
+    }
+  ]
+};
+
+function ensureDirSync(dirPath) {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+}
+
+function loadDB() {
+  ensureDirSync(path.dirname(DB_FILE));
+  if (!fs.existsSync(DB_FILE)) {
+    if (isVercel && fs.existsSync(DEFAULT_DB_FILE)) {
+      try {
+        const defaultRaw = fs.readFileSync(DEFAULT_DB_FILE, 'utf-8');
+        fs.writeFileSync(DB_FILE, defaultRaw, 'utf-8');
+        return JSON.parse(defaultRaw);
+      } catch (e) {
+        console.warn('Could not copy default DB, using initialData:', e);
+      }
+    }
+    saveDB(initialData);
+    return JSON.parse(JSON.stringify(initialData));
+  }
+  try {
+    const raw = fs.readFileSync(DB_FILE, 'utf-8');
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error reading DB, re-initializing...', err);
+    saveDB(initialData);
+    return JSON.parse(JSON.stringify(initialData));
+  }
+}
+
+function saveDB(data) {
+  ensureDirSync(path.dirname(DB_FILE));
+  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+}
+
+module.exports = {
+  loadDB,
+  saveDB,
+  ensureDirSync
+};

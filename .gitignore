@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Temporary test/scrape scripts & files
+*.tmp
+*.log
+programmer_page.html
+Integration_Methods.html
+swagger.json
+check_external_docs.py
+check_oidc.py
+inspect_swagger.py
+parse_api_links.py
+parse_panels.py
+read_integration_methods.py
+read_invoice_api.py
+read_plugin_builder.py
+scrape_wiki.py
+test_auth_endpoints.py
+extracted_pptx/
+slides_images/
+
+# OS files
+.DS_Store
+Thumbs.db

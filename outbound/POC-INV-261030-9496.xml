@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AutoCountETaxDocument version="2.0">
+    <Header>
+        <DocNo>POC-INV-261030-9496</DocNo>
+        <DocType>Credit Note</DocType>
+        <DocDate>2026-10-30</DocDate>
+        <AccountBook>ACC-TH-EUROFINS-01</AccountBook>
+        <DeveloperID>Piyarathl@gmail.com</DeveloperID>
+        <ETaxUUID>TH-ETAX-20261030-48FE99BC</ETaxUUID>
+    </Header>
+    <Debtor>
+        <Code>DB-005</Code>
+        <Name>นายสมชาย ประเสริฐยิ่ง (Somchai Trading)</Name>
+        <TaxID>3100500987654</TaxID>
+        <Branch>00000</Branch>
+        <Email>somchai.prs@gmail.com</Email>
+    </Debtor>
+    <Financials>
+        <Subtotal>5500.00</Subtotal>
+        <TaxRate>7.0%</TaxRate>
+        <TaxAmount>385.00</TaxAmount>
+        <TotalAmount>5885.00</TotalAmount>
+    </Financials>
+</AutoCountETaxDocument>

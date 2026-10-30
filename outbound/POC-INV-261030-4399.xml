@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AutoCountETaxDocument version="2.0">
+    <Header>
+        <DocNo>POC-INV-261030-4399</DocNo>
+        <DocType>Debit Note</DocType>
+        <DocDate>2026-10-30</DocDate>
+        <AccountBook>ACC-TH-EUROFINS-01</AccountBook>
+        <DeveloperID>Piyarathl@gmail.com</DeveloperID>
+        <ETaxUUID>TH-ETAX-20261030-FC0391B3</ETaxUUID>
+    </Header>
+    <Debtor>
+        <Code>DB-002</Code>
+        <Name>Eurofins Scientific Testing (Thailand)</Name>
+        <TaxID>0105558091234</TaxID>
+        <Branch>00001</Branch>
+        <Email>ap-thailand@eurofins.com</Email>
+    </Debtor>
+    <Financials>
+        <Subtotal>6450.00</Subtotal>
+        <TaxRate>7.0%</TaxRate>
+        <TaxAmount>451.50</TaxAmount>
+        <TotalAmount>6901.50</TotalAmount>
+    </Financials>
+</AutoCountETaxDocument>

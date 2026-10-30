@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rsm:TaxInvoice_CrossIndustryInvoice xmlns:rsm="urn:etda:uncefact:data:standard:TaxInvoice_CrossIndustryInvoice:2"
+  xmlns:ram="urn:etda:uncefact:data:standard:TaxInvoice_ReusableAggregateBusinessInformationEntity:2">
+  <rsm:ExchangedDocumentContext>
+    <ram:GuidelineSpecifiedDocumentContextParameter>
+      <ram:ID>ER3-2560</ram:ID>
+    </ram:GuidelineSpecifiedDocumentContextParameter>
+  </rsm:ExchangedDocumentContext>
+  <rsm:ExchangedDocument>
+    <ram:ID>TIT2508685</ram:ID>
+    <ram:Name>ใบกำกับภาษี/ใบเสร็จรับเงิน</ram:Name>
+    <ram:TypeCode>388</ram:TypeCode>
+    <ram:IssueDateTime>2026-10-29T15:26:41.534Z</ram:IssueDateTime>
+    
+  </rsm:ExchangedDocument>
+  <rsm:SupplyChainTradeTransaction>
+    <ram:ApplicableHeaderTradeAgreement>
+      <ram:SellerTradeParty>
+        <ram:Name>บริษัท เฟล็กซ์ ซอฟท์แวร์(ประเทศไทย) จำกัด</ram:Name>
+        <ram:SpecifiedTaxRegistration>
+          <ram:ID schemeID="TXID">0105561025138</ram:ID>
+        </ram:SpecifiedTaxRegistration>
+      </ram:SellerTradeParty>
+      <ram:BuyerTradeParty>
+        <ram:Name>บริษัท คู่ค้าชั้นนำ จำกัด</ram:Name>
+        <ram:SpecifiedTaxRegistration>
+          <ram:ID schemeID="TXID">0105558012345</ram:ID>
+        </ram:SpecifiedTaxRegistration>
+      </ram:BuyerTradeParty>
+    </ram:ApplicableHeaderTradeAgreement>
+    <ram:ApplicableHeaderTradeSettlement>
+      <ram:SpecifiedTradeSettlementHeaderMonetarySummation>
+        <ram:LineTotalAmount currencyID="THB">15000.00</ram:LineTotalAmount>
+        <ram:TaxTotalAmount currencyID="THB">1050.00</ram:TaxTotalAmount>
+        <ram:GrandTotalAmount currencyID="THB">16050.00</ram:GrandTotalAmount>
+      </ram:SpecifiedTradeSettlementHeaderMonetarySummation>
+    </ram:ApplicableHeaderTradeSettlement>
+  </rsm:SupplyChainTradeTransaction>
+</rsm:TaxInvoice_CrossIndustryInvoice>

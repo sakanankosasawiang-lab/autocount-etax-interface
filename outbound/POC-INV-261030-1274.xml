@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AutoCountETaxDocument version="2.0">
+    <Header>
+        <DocNo>POC-INV-261030-1274</DocNo>
+        <DocType>Sales Invoice</DocType>
+        <DocDate>2026-10-30</DocDate>
+        <AccountBook>ACC-TH-EUROFINS-01</AccountBook>
+        <DeveloperID>Piyarathl@gmail.com</DeveloperID>
+        <ETaxUUID>TH-ETAX-20261030-0E491651</ETaxUUID>
+    </Header>
+    <Debtor>
+        <Code>DB-001</Code>
+        <Name>Siam Commercial Distribution Co., Ltd.</Name>
+        <TaxID>0105551029384</TaxID>
+        <Branch>00000</Branch>
+        <Email>finance@scdist.co.th</Email>
+    </Debtor>
+    <Financials>
+        <Subtotal>1200.00</Subtotal>
+        <TaxRate>7.0%</TaxRate>
+        <TaxAmount>84.00</TaxAmount>
+        <TotalAmount>1284.00</TotalAmount>
+    </Financials>
+</AutoCountETaxDocument>

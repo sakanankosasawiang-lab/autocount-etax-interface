@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flex Interface e-Tax | Autocount >> iNet e-Tax One.th</title>
+  <!-- Google Fonts: Prompt -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- ========================================================== -->
+  <!-- LOGIN VIEW -->
+  <!-- ========================================================== -->
+  <div id="view-login" class="login-container">
+    <div class="login-card">
+      <div class="login-hero-side">
+        <img src="/assets/login-hero.png" alt="iNET e-Tax INTERFACE Flex SOFTWARE" class="img-fluid mb-3">
+        <div class="text-white-50 small mt-2">Flex Interface e-Tax Autocount &gt;&gt; iNet e-Tax One.th</div>
+      </div>
+      <div class="login-form-side">
+        <h3 class="login-title text-center">STAFFS LOGIN</h3>
+        <form id="form-login" onsubmit="handleLogin(event)">
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-bold"><i class="fa-solid fa-user me-1"></i> USERNAME</label>
+            <input type="text" id="login-username" class="form-control login-input" placeholder="Enter username" value="admin" required>
+          </div>
+          <div class="mb-4">
+            <label class="form-label text-muted small fw-bold"><i class="fa-solid fa-lock me-1"></i> PASSWORD</label>
+            <input type="password" id="login-password" class="form-control login-input" placeholder="Enter password" value="admin" required>
+          </div>
+          <div class="d-flex justify-content-center gap-3 mb-4">
+            <button type="submit" class="btn btn-login">LOGIN</button>
+            <button type="button" class="btn btn-cancel" onclick="clearLoginForm()">CANCEL</button>
+          </div>
+        </form>
+
+        <div class="border-top pt-3 text-center">
+          <div class="text-muted small mb-2">บัญชีทดสอบด่วน (Quick Demo Login):</div>
+          <div class="d-flex justify-content-center gap-2">
+            <button class="btn btn-sm btn-outline-primary" onclick="quickLogin('admin', 'admin')">
+              <i class="fa-solid fa-user-shield me-1"></i> Admin (ตั้งค่า + ส่งข้อมูล)
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="quickLogin('user1', 'user123')">
+              <i class="fa-solid fa-user me-1"></i> User (ส่งข้อมูลเท่านั้น)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- MAIN APP CONTAINER (HEADER + VIEWS + FOOTER) -->
+  <!-- ========================================================== -->
+  <div id="app-wrapper" style="display: none; min-height: 100vh; flex-direction: column;">
+    <!-- NAVBAR (Slide 9-13) -->
+    <nav class="navbar navbar-expand-lg etax-navbar">
+      <div class="container-fluid">
+        <a class="navbar-brand etax-brand" href="javascript:void(0)" onclick="navigateTo('home')">
+          <img src="/assets/etax-logo.png" alt="e-Tax Logo">
+        </a>
+        <button class="navbar-toggler text-white border-0" type="button" data-bs-toggle="collapse" data-bs-target="#etaxNav">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <div class="collapse navbar-collapse" id="etaxNav">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link etax-nav-link" id="nav-home" href="javascript:void(0)" onclick="navigateTo('home')">หน้าหลัก</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link etax-nav-link" id="nav-users" href="javascript:void(0)" onclick="navigateTo('users')">ผู้ใช้งาน</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link etax-nav-link" id="nav-logfiles" href="javascript:void(0)" onclick="navigateTo('logfiles')">ประวัติการทำงาน</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link etax-nav-link" id="nav-company" href="javascript:void(0)" onclick="navigateTo('company')">ข้อมูลบริษัท</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link etax-nav-link" id="nav-setup" href="javascript:void(0)" onclick="navigateTo('setup')">ตั้งค่าระบบ</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link etax-nav-link" href="javascript:void(0)" onclick="openArchitectureModal()">
+                <i class="fa-solid fa-diagram-project me-1 text-warning"></i> โครงสร้างระบบ (กรอบแดง)
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link etax-nav-link text-info fw-bold" href="/autocount-poc" target="_blank">
+                <i class="fa-solid fa-cloud-bolt text-info me-1"></i> AutoCount API POC
+              </a>
+            </li>
+          </ul>
+
+          <div class="d-flex align-items-center gap-3">
+            <div class="dropdown">
+              <a class="dropdown-toggle etax-user-dropdown" href="#" role="button" data-bs-toggle="dropdown">
+                <i class="fa-solid fa-circle-user fa-lg"></i>
+                <span id="current-user-name">ข้อมูลส่วนตัว</span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end shadow">
+                <li><h6 class="dropdown-header" id="current-user-role-badge">Role: Admin</h6></li>
+                <li><a class="dropdown-item" href="javascript:void(0)" onclick="navigateTo('users')"><i class="fa-solid fa-gear me-2"></i>จัดการโปรไฟล์</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="handleLogout()"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i>ออกจากระบบ</a></li>
+              </ul>
+            </div>
+
+            <a href="javascript:void(0)" class="etax-logout-btn" onclick="handleLogout()" title="ออกจากระบบ">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i>
+              <span>ออกระบบ</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- CONTENT CONTAINER -->
+    <div class="container-fluid px-4 py-4 flex-grow-1">
+
+      <!-- ========================================================== -->
+      <!-- VIEW 1: HOME DASHBOARD (Slide 9) -->
+      <!-- ========================================================== -->
+      <div id="view-home" class="page-view">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <button class="btn btn-send-now" onclick="triggerSendNow()">
+              <i class="fa-solid fa-cloud-arrow-up"></i> นำส่งข้อมูลทันที
+            </button>
+            <button class="btn btn-outline-primary rounded-pill px-3" onclick="openTestModal()">
+              <i class="fa-solid fa-flask me-1"></i> ทดสอบสร้างเอกสาร Inbound
+            </button>
+            <div class="badge bg-light text-dark border p-2 rounded">
+              <i class="fa-regular fa-clock me-1 text-primary"></i>
+              รอบกวาดข้อมูลอัตโนมัติ: ทุก <span id="home-interval-mins">10</span> นาที
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <button class="view-toggle-btn active" id="btn-view-list" onclick="switchHomeView('list')" title="List View">
+              <i class="fa-solid fa-list"></i>
+            </button>
+            <button class="view-toggle-btn" id="btn-view-grid" onclick="switchHomeView('grid')" title="Grid View">
+              <i class="fa-solid fa-table-cells"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Table View (Slide 9) -->
+        <div id="home-table-container" class="card border-0 shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-etax mb-0">
+              <thead>
+                <tr>
+                  <th style="width: 32%;">ชื่อบริษัท/ลูกค้า</th>
+                  <th style="width: 18%;">TAX ID</th>
+                  <th colspan="6" class="text-center" style="background-color: #e9ecef; border-bottom: 2px solid #ced4da;">สถานะการส่งเอกสาร</th>
+                </tr>
+                <tr style="background-color: #f8f9fa;">
+                  <th></th>
+                  <th></th>
+                  <th class="text-center" style="width: 8%;">เดือนนี้</th>
+                  <th class="text-center" style="width: 8%;">วันนี้</th>
+                  <th class="text-center" style="width: 8%;">สำเร็จ</th>
+                  <th class="text-center" style="width: 8%;">ไม่สำเร็จ</th>
+                  <th class="text-center" style="width: 8%;">ค้าง <i class="fa-solid fa-circle-info text-secondary" title="จำนวนเอกสารที่รอรอบการนำส่ง"></i></th>
+                  <th class="text-center" style="width: 10%;">ล้างเอกสาร <i class="fa-solid fa-circle-info text-secondary" title="ล้างรายการเอกสารค้าง"></i></th>
+                </tr>
+              </thead>
+              <tbody id="home-companies-tbody">
+                <!-- Injected by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Grid View (Alternative) -->
+        <div id="home-grid-container" class="row g-4" style="display: none;">
+          <!-- Injected by JavaScript -->
+        </div>
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- VIEW 2: SETUP (Slide 10) -->
+      <!-- ========================================================== -->
+      <div id="view-setup" class="page-view" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3 class="fw-bold mb-0">ตั้งค่าระบบ</h3>
+          <button class="btn btn-secondary px-4 rounded-pill" onclick="loadSetupData()">
+            รีโหลด
+          </button>
+        </div>
+
+        <!-- Form for Setup Parameter -->
+        <div class="card border-0 shadow-sm p-4 mb-4">
+          <form id="form-setup" onsubmit="handleSaveSetup(event)">
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-bold">รายละเอียด TH</label>
+                <input type="text" id="setup-desc-th" class="form-control" placeholder="รายละเอียด TH" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">รายละเอียด EN</label>
+                <input type="text" id="setup-desc-en" class="form-control" placeholder="รายละเอียด EN">
+              </div>
+            </div>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label fw-bold">ชื่อตัวแปร</label>
+                <input type="text" id="setup-name" class="form-control" placeholder="ชื่อตัวแปร (เช่น API_TIME_TO_SEND)" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">ค่าตัวแปร</label>
+                <input type="text" id="setup-val" class="form-control" placeholder="ค่าตัวแปร" required>
+              </div>
+            </div>
+            <div class="text-end">
+              <button type="submit" class="btn btn-success px-4 rounded-pill">
+                บันทึก
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Table of Setup Parameters (Slide 10) -->
+        <div class="card border-0 shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 5%;">#</th>
+                  <th style="width: 35%;">รายละเอียด</th>
+                  <th style="width: 30%;">ชื่อตัวแปร</th>
+                  <th style="width: 20%;">ค่าตัวแปร</th>
+                  <th style="width: 10%;" class="text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="setup-table-tbody">
+                <!-- Injected by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- VIEW 3: COMPANY (Slide 11) -->
+      <!-- ========================================================== -->
+      <div id="view-company" class="page-view" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3 class="fw-bold mb-0">COMPANY</h3>
+          <button class="btn btn-secondary px-4 rounded-pill" onclick="loadCompanyData()">
+            REFRESH
+          </button>
+        </div>
+
+        <!-- Company Edit/Add Form (Slide 11) -->
+        <div class="card border-0 shadow-sm p-4 mb-4">
+          <form id="form-company" onsubmit="handleSaveCompany(event)">
+            <input type="hidden" id="company-edit-id">
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <label class="form-label fw-bold">ชื่อบริษัท</label>
+                <input type="text" id="comp-name" class="form-control" placeholder="ชื่อบริษัท" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold">โฟลเดอร์สำหรับทำงาน</label>
+                <input type="text" id="comp-folder" class="form-control" placeholder="โฟลเดอร์สำหรับทำงาน (เช่น Flex_Software)" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold">การส่งไฟล์ TXT และ PDF</label>
+                <select id="comp-mode" class="form-select">
+                  <option value="ส่งไฟล์คู่ TXT และ PDF">ส่งไฟล์คู่ TXT และ PDF</option>
+                  <option value="ส่งเฉพาะ TXT">ส่งเฉพาะ TXT</option>
+                  <option value="ส่งเฉพาะ PDF">ส่งเฉพาะ PDF</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <label class="form-label fw-bold">เลขผู้เสียภาษี</label>
+                <input type="text" id="comp-taxid" class="form-control" placeholder="เลขผู้เสียภาษี 13 หลัก" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold">สาขา</label>
+                <input type="text" id="comp-branch" class="form-control" placeholder="สาขา เช่น 00000" value="00000">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold">เบอร์โทร</label>
+                <input type="text" id="comp-phone" class="form-control" placeholder="+66-21234567">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-bold">Authorization Code</label>
+              <input type="text" id="comp-authcode" class="form-control" placeholder="Authorization Code">
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label fw-bold">API Key</label>
+              <input type="text" id="comp-apikey" class="form-control" placeholder="API Key">
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+              <button type="button" class="btn btn-outline-secondary px-4 rounded-pill" onclick="resetCompanyForm()">
+                ล้างข้อมูล
+              </button>
+              <button type="submit" class="btn btn-dark px-4 rounded-pill" style="background-color: #4a5568;">
+                บันทึกข้อมูล
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Company Table (Slide 11) -->
+        <div class="card border-0 shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 5%;">#</th>
+                  <th style="width: 35%;">ชื่อบริษัท</th>
+                  <th style="width: 25%;">เลขที่ผู้เสียภาษี</th>
+                  <th style="width: 25%;">โฟลเดอร์ทำงาน</th>
+                  <th style="width: 10%;" class="text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="company-table-tbody">
+                <!-- Injected by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- VIEW 4: USERS (Slide 12) -->
+      <!-- ========================================================== -->
+      <div id="view-users" class="page-view" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3 class="fw-bold mb-0">USERS</h3>
+          <button class="btn btn-secondary px-4 rounded-pill" onclick="loadUsersData()">
+            REFRESH
+          </button>
+        </div>
+
+        <div class="row g-4">
+          <!-- Left Column: User List & +NEW Button -->
+          <div class="col-md-4">
+            <button class="btn btn-success w-100 mb-3 fw-bold py-2 rounded" onclick="createNewUser()">
+              <i class="fa-solid fa-plus me-1"></i> NEW
+            </button>
+            <div id="users-list-container" class="list-group">
+              <!-- Injected by JavaScript -->
+            </div>
+          </div>
+
+          <!-- Right Column: User Edit Card (Slide 12) -->
+          <div class="col-md-8">
+            <div class="card border shadow-sm">
+              <div class="card-header bg-white fw-bold py-3">
+                <i class="fa-solid fa-pen-to-square me-2"></i>EDIT
+              </div>
+              <div class="card-body p-4">
+                <form id="form-user" onsubmit="handleSaveUser(event)">
+                  <input type="hidden" id="user-edit-id">
+
+                  <div class="text-center mb-4">
+                    <img id="user-avatar-preview" src="/assets/avatar-user.svg" alt="User Image" class="rounded-circle shadow-sm" style="width: 90px; height: 90px; object-fit: cover;">
+                  </div>
+
+                  <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">ประเภท</label>
+                      <select id="user-role" class="form-select">
+                        <option value="Admin">Admin (สามารถ Setup และจัดการ e-Tax)</option>
+                        <option value="User">User (จัดการนำส่ง e-Tax เท่านั้น)</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">ชื่อผู้ใช้งาน</label>
+                      <input type="text" id="user-fullname" class="form-control" placeholder="ชื่อ-นามสกุล หรือ Staff Name" required>
+                    </div>
+                  </div>
+
+                  <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">Username</label>
+                      <input type="text" id="user-username" class="form-control" placeholder="Username สำหรับ Login" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">New Password</label>
+                      <input type="password" id="user-password" class="form-control" placeholder="ใส่รหัสผ่านใหม่ (หากต้องการเปลี่ยน)">
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label fw-bold">Email</label>
+                    <input type="email" id="user-email" class="form-control" placeholder="user@flexsoftware.co.th">
+                  </div>
+
+                  <div class="mb-4">
+                    <label class="form-label fw-bold">รูปภาพ</label>
+                    <input type="file" id="user-image-input" class="form-control" accept="image/*" onchange="previewAvatar(event)">
+                  </div>
+
+                  <div class="text-end d-flex justify-content-end gap-2">
+                    <button type="submit" class="btn btn-success px-4 rounded-pill">
+                      ปรับปรุง
+                    </button>
+                    <button type="button" class="btn btn-secondary px-4 rounded-pill" onclick="cancelUserEdit()">
+                      ยกเลิก
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- VIEW 5: LOGFILES (Slide 13) -->
+      <!-- ========================================================== -->
+      <div id="view-logfiles" class="page-view" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3 class="fw-bold mb-0">LOGFILES</h3>
+          <button class="btn btn-secondary px-4 rounded-pill" onclick="navigateTo('home')">
+            BACK
+          </button>
+        </div>
+
+        <!-- Filter Controls (Slide 13) -->
+        <div class="card border-0 shadow-sm p-4 mb-3">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label fw-bold">บริษัท</label>
+              <select id="log-filter-company" class="form-select">
+                <option value="all">ทั้งหมด</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">สถานะ</label>
+              <select id="log-filter-status" class="form-select">
+                <option value="ทั้งหมด">ทั้งหมด</option>
+                <option value="สร้างเอกสารสำเร็จ">สร้างเอกสารสำเร็จ</option>
+                <option value="สร้างเอกสารไม่สำเร็จ">สร้างเอกสารไม่สำเร็จ</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label fw-bold">วันที่</label>
+              <input type="date" id="log-filter-date-from" class="form-control" value="2025-08-27">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label fw-bold">ถึงวันที่</label>
+              <input type="date" id="log-filter-date-to" class="form-control" value="2025-08-27">
+            </div>
+            <div class="col-md-2">
+              <button class="btn btn-secondary w-100 py-2 rounded" onclick="applyLogFilter()">
+                ค้นหา
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Current Filter Summary Banner (Slide 13) -->
+        <div class="mb-3 fw-bold fs-6" id="log-filter-summary">
+          บริษัท เฟล็กซ์ ซอฟท์แวร์(ประเทศไทย) จำกัด : วันที่ส่งเอกสาร 2025-08-27 ถึง 2025-08-27 สถานะ : ทั้งหมด
+        </div>
+
+        <!-- Table Card with Search & Page Size -->
+        <div class="card border-0 shadow-sm">
+          <div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <span>Show</span>
+              <select id="log-page-limit" class="form-select form-select-sm" style="width: 75px;" onchange="loadLogsData()">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+              </select>
+              <span>entries</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <label>Search:</label>
+              <input type="text" id="log-search-input" class="form-control form-control-sm" style="width: 220px;" placeholder="ค้นหาเลขที่เอกสาร..." oninput="debounceLogSearch()">
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 5%;">#</th>
+                  <th style="width: 25%;">เลขที่เอกสาร</th>
+                  <th style="width: 15%;">Service Code</th>
+                  <th style="width: 25%;">วันที่ส่งเอกสาร</th>
+                  <th style="width: 20%;" class="text-center">สถานะ</th>
+                  <th style="width: 10%;" class="text-center">รายละเอียด</th>
+                </tr>
+              </thead>
+              <tbody id="log-table-tbody">
+                <!-- Injected by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Footer -->
+          <div class="p-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2" id="log-pagination">
+            <div class="text-muted small" id="log-pagination-info">Showing 1 to 7 of 7 entries</div>
+            <ul class="pagination pagination-sm mb-0" id="log-pagination-btns">
+              <!-- Injected by JavaScript -->
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FOOTER (Slide 9) -->
+    <footer class="etax-footer">
+      <div>
+        <strong>Interface e-TAX</strong> Copyright &copy; 2025 (Autocount &gt;&gt; iNet e-Tax One.th)
+      </div>
+      <div>
+        <a href="javascript:void(0)" class="btn-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+          <i class="fa-solid fa-arrow-up"></i> TOP
+        </a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- MODAL: ARCHITECTURE & RED BOX EXPLANATION (Slide 3 & 4) -->
+  <!-- ========================================================== -->
+  <div class="modal fade" id="modal-architecture" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-dark text-white">
+          <h5 class="modal-title"><i class="fa-solid fa-diagram-project text-danger me-2"></i> โครงสร้างการทำงานระบบ Flex Interface e-Tax (กรอบแดง)</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="alert alert-info d-flex align-items-center gap-3 mb-4">
+            <i class="fa-solid fa-circle-info fa-2x"></i>
+            <div>
+              <strong>ส่วนของกรอบแดงใน Presentation (Slide 3 &amp; 4):</strong>
+              ระบบเว็บแอปพลิเคชัน <strong>Flex Interface e-Tax</strong> ทำหน้าที่เป็นสะพานเชื่อมระหว่างโปรแกรมบัญชี <strong>Autocount</strong> กับระบบ <strong>iNet e-Tax One.th</strong> ของผู้ให้บริการที่ผ่านการรับรองจากกรมสรรพากร
+            </div>
+          </div>
+
+          <div class="row g-4 mb-4">
+            <!-- Step 1 -->
+            <div class="col-md-3">
+              <div class="card h-100 border-primary">
+                <div class="card-header bg-primary text-white fw-bold">
+                  <span class="badge bg-white text-primary me-1">1</span> Autocount
+                </div>
+                <div class="card-body">
+                  <h6 class="fw-bold">จัดทำข้อมูลใบกำกับภาษี</h6>
+                  <p class="small text-muted mb-2">ส่งออกไฟล์ใบกำกับภาษีในรูปแบบ <code>.pdf</code> และ <code>.txt</code> ลงในโฟลเดอร์ Inbound ของแต่ละบริษัท</p>
+                  <ul class="small ps-3 mb-0">
+                    <li>วิธีพิมพ์ทีละใบ (Print 1 by 1)</li>
+                    <li>วิธี Batch Export eTax</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="col-md-3">
+              <div class="card h-100 border-danger red-box-highlight">
+                <span class="red-box-badge">กรอบแดงหลัก</span>
+                <div class="card-header bg-danger text-white fw-bold">
+                  <span class="badge bg-white text-danger me-1">2</span> Inbound &amp; Process
+                </div>
+                <div class="card-body">
+                  <h6 class="fw-bold">กวาดข้อมูลและตรวจสอบ</h6>
+                  <p class="small text-muted mb-2">ระบบทำงานตรวจสอบไฟล์ใน Inbound:</p>
+                  <ul class="small ps-3 mb-0">
+                    <li>รอรอบกวาดข้อมูลอัตโนมัติ (เช่น ทุก 10 นาที)</li>
+                    <li>หรือกดปุ่ม <strong>นำส่งข้อมูลทันที</strong></li>
+                    <li>ตรวจสอบความถูกต้องตามเกณฑ์สรรพากร (Slide 14)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="col-md-3">
+              <div class="card h-100 border-success">
+                <div class="card-header bg-success text-white fw-bold">
+                  <span class="badge bg-white text-success me-1">3</span> Outbound &amp; iNet
+                </div>
+                <div class="card-body">
+                  <h6 class="fw-bold">ส่งไปยัง iNet e-Tax</h6>
+                  <p class="small text-muted mb-2">สร้างไฟล์ <code>.pdf</code> และ <code>.xml</code> ลงในโฟลเดอร์ Outbound</p>
+                  <ul class="small ps-3 mb-0">
+                    <li>ส่งผ่าน API / Host to Host ไปยัง One.th</li>
+                    <li>ลงลายมือชื่อดิจิทัลและประทับรับรอง</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="col-md-3">
+              <div class="card h-100 border-info">
+                <div class="card-header bg-info text-white fw-bold">
+                  <span class="badge bg-white text-info me-1">4</span> Process Tracking
+                </div>
+                <div class="card-body">
+                  <h6 class="fw-bold">ติดตามประวัติและสถานะ</h6>
+                  <p class="small text-muted mb-2">แสดงผลรายงานการทำงาน:</p>
+                  <ul class="small ps-3 mb-0">
+                    <li>ตรวจสอบจำนวน: สำเร็จ, ไม่สำเร็จ, ค้าง</li>
+                    <li>แสดงผล Error กรณีส่งไม่สำเร็จพร้อมคำอธิบาย</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slide 14 Business Rules -->
+          <div class="card border-warning">
+            <div class="card-header bg-warning text-dark fw-bold">
+              <i class="fa-solid fa-triangle-exclamation me-1"></i> ข้อกำหนดสำคัญของข้อมูล (ตาม Slide 14 ของ PPTX)
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <ul class="small mb-0">
+                    <li class="mb-2"><strong>ข้อมูลผู้ซื้อ:</strong> ต้องกำหนด Registration Type และ Country Code ให้ครบถ้วน</li>
+                    <li class="mb-2"><strong>Email ผู้ซื้อ:</strong> ต้องกำหนดใน Debtor Maintenance ของ Autocount</li>
+                    <li><strong>Marketplace:</strong> จะส่งไม่ได้ ต้อง Customize หากต้องการส่ง End Customer</li>
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <ul class="small mb-0">
+                    <li class="mb-2"><strong>เบอร์โทรศัพท์:</strong> ต้องเป็น Format (H21,B10) <code>+ตัวเลข 1-3 หลัก-ตัวเลข</code> หรือเครื่องหมาย <code>&lt;+ หรือ -&gt;</code> ไม่เกิน 30 หลัก</li>
+                    <li><strong>เอกสารเพิ่มหนี้/ลดหนี้ (DN / CN):</strong> ต้องระบุรหัส <code>eTax Reason</code> ในแต่ละเอกสาร</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">ปิดหน้าต่าง</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- MODAL: ERROR DETAILS (Slide 13 & 14) -->
+  <!-- ========================================================== -->
+  <div class="modal fade" id="modal-error-detail" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title"><i class="fa-solid fa-circle-exclamation me-2"></i> รายละเอียดข้อผิดพลาด (Error Detail)</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="text-muted small fw-bold">เลขที่เอกสาร</label>
+            <div class="fs-5 fw-bold text-dark" id="modal-err-docno">-</div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="text-muted small fw-bold">Service Code</label>
+              <div class="fw-semibold text-primary" id="modal-err-service">S06</div>
+            </div>
+            <div class="col-6">
+              <label class="text-muted small fw-bold">เวลาที่ส่ง</label>
+              <div class="text-secondary" id="modal-err-time">-</div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="text-muted small fw-bold">สถานะ</label>
+            <div><span class="badge bg-danger fs-6">สร้างเอกสารไม่สำเร็จ</span></div>
+          </div>
+          <div class="alert alert-danger mb-3">
+            <div class="fw-bold mb-1"><i class="fa-solid fa-xmark me-1"></i> สาเหตุความผิดพลาด:</div>
+            <div id="modal-err-message">-</div>
+          </div>
+          <div class="card bg-light border-0 p-3">
+            <div class="fw-bold small text-secondary mb-1"><i class="fa-solid fa-wrench me-1"></i> วิธีแก้ไขในระบบ Autocount:</div>
+            <div class="small text-muted" id="modal-err-solution">-</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">ปิด</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- MODAL: TEST INBOUND GENERATOR -->
+  <!-- ========================================================== -->
+  <div class="modal fade" id="modal-test-inbound" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title"><i class="fa-solid fa-vial-circle-check me-2"></i> จำลองการส่งออกไฟล์จาก Autocount ไปยัง Inbound</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <p class="text-muted small mb-3">
+            เลือกบริษัทและกรณีทดสอบเพื่อสร้างไฟล์ <code>.txt</code> และ <code>.pdf</code> จำลองในโฟลเดอร์ <code>inbound</code> ของบริษัท จากนั้นคุณสามารถกด <strong>"นำส่งข้อมูลทันที"</strong> เพื่อทดสอบการทำงานของระบบ
+          </p>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">เลือกบริษัท</label>
+            <select id="test-comp-select" class="form-select">
+              <!-- Injected by JavaScript -->
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-bold">กรณีทดสอบ (Test Case)</label>
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="radio" name="testType" id="test-type-success" value="success" checked>
+              <label class="form-check-label fw-semibold text-success" for="test-type-success">
+                <i class="fa-solid fa-check-circle me-1"></i> เอกสารสมบูรณ์ (คาดหวัง: สำเร็จ - S06)
+              </label>
+            </div>
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="radio" name="testType" id="test-type-phone" value="err_phone">
+              <label class="form-check-label text-danger" for="test-type-phone">
+                <i class="fa-solid fa-phone-slash me-1"></i> เบอร์โทรผิด Format H21,B10 (คาดหวัง: ไม่สำเร็จ)
+              </label>
+            </div>
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="radio" name="testType" id="test-type-reason" value="err_reason">
+              <label class="form-check-label text-danger" for="test-type-reason">
+                <i class="fa-solid fa-file-circle-xmark me-1"></i> เอกสาร DN ขาด eTax Reason (คาดหวัง: ไม่สำเร็จ)
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="testType" id="test-type-buyer" value="err_buyer">
+              <label class="form-check-label text-danger" for="test-type-buyer">
+                <i class="fa-solid fa-id-card-clip me-1"></i> ขาด Registration Type และ Country Code (คาดหวัง: ไม่สำเร็จ)
+              </label>
+            </div>
+          </div>
+
+          <div id="test-result-alert" class="alert alert-success d-none mb-0"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-primary rounded-pill px-4" onclick="executeGenerateSample()">
+            <i class="fa-solid fa-plus me-1"></i> สร้างไฟล์ตัวอย่าง
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Application JS -->
+  <script src="/js/app.js"></script>
+</body>
+</html>

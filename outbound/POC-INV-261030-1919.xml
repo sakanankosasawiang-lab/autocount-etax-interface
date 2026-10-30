@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AutoCountETaxDocument version="2.0">
+    <Header>
+        <DocNo>POC-INV-261030-1919</DocNo>
+        <DocType>Sales Invoice</DocType>
+        <DocDate>2026-10-30</DocDate>
+        <AccountBook>ACC-TH-EUROFINS-01</AccountBook>
+        <DeveloperID>Piyarathl@gmail.com</DeveloperID>
+        <ETaxUUID>TH-ETAX-20261030-7D6D7B10</ETaxUUID>
+    </Header>
+    <Debtor>
+        <Code>DB-004</Code>
+        <Name>Boonrawd Agri-Logistics Partnership</Name>
+        <TaxID>0103554098172</TaxID>
+        <Branch>00002</Branch>
+        <Email>account@boonrawdagri.com</Email>
+    </Debtor>
+    <Financials>
+        <Subtotal>950.00</Subtotal>
+        <TaxRate>7.0%</TaxRate>
+        <TaxAmount>66.50</TaxAmount>
+        <TotalAmount>1016.50</TotalAmount>
+    </Financials>
+</AutoCountETaxDocument>
